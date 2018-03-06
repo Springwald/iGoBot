@@ -34,13 +34,11 @@ my_path ='/'.join(my_file.split('/')[0:-1])
 
 sys.path.insert(0,my_path + "/../libs" )
 
-from MultiProcessing import MultiProcessing
-
 from GroveI2CMotorDriver import GroveI2CMotorDriver
 from I2cIoExpanderPcf8574 import I2cIoExpanderPcf8574
-from StepperMotorControl import StepperMotorControl
+from StepperMotorControlSynchron import StepperMotorControlSynchron
 
-class NeckLeftRight(StepperMotorControl):
+class NeckLeftRight(StepperMotorControlSynchron):
 
 	_motorName					= "neck left/right"
 
@@ -49,26 +47,26 @@ class NeckLeftRight(StepperMotorControl):
 	_i2cIoExpanderPcf8574		= None      # the I2cIoExpanderPcf8574 the endstop is connected to
 	_endStopBit					= 128       # the bit of the I2cIoExpanderPcf8574 to read the motor endstop
 
-	_isClosedCircle				= True      # is 0 to maxSteps a full round to the same endstop
+	_isClosedCircle				= False      # is 0 to maxSteps a full round to the same endstop
 
-	_fastestSpeedDelay			= 0.002     # how fast can the stepper motor go
+	_fastestSpeedDelay			= 0.00015     # how fast can the stepper motor go
 	_slowestSpeedDelay			= _fastestSpeedDelay * 10
 	_calibrateSpeedDelay		= _fastestSpeedDelay * 5
 	_actualSpeedDelay			= _slowestSpeedDelay
 
-	_rampSpeedup				= 1.02      # how fast is the speed of for motor ramping
-	_rampSafeArea				= 40        # prevent to come nearer than this to the endstop
+	_rampSpeedup				= 1.01       # how fast is the speed of for motor ramping
+	_rampSafeArea				= 100        # prevent to come nearer than this to the endstop
 
-	_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
-	#_stepData					= [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001]  # the stepper motor step bits with half steps
-	MaxSteps					= 1600      # how many motor steps can the motor maximum move 
+	#_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
+	_stepData					= [0b0001,  0b0100,  0b0010, 0b1000]  # the stepper motor step bits with half steps
+	MaxSteps					= 22000      # how many motor steps can the motor maximum move 
 	
 	#_stepData					= [0b0001, 0b0100, 0b0010, 0b1000, ]  # the stepper motor step bits with full steps
 	#MaxSteps					= 800      # how many motor steps can the motor maximum move 
 
 	_motor						= None
 	_motorPowerOn				= 100
-	_motorPowerStandBy			= 100
+	_motorPowerStandBy			= 0
 	_motorPowerOff				= 0
 	_motorIsStandBy				= True
 	
@@ -88,8 +86,8 @@ class NeckLeftRight(StepperMotorControl):
 	def _updateMotorSteps(self):
 		if (super()._releasedMotor == True):
 			return
-		for i in range(1, 4):
-			actualStepDataPos = self.actualStepDataPos
+		#for i in range(1, 4):
+		#actualStepDataPos = self.actualStepDataPos
 		actualStepDataPos = self.actualStepDataPos
 		if (self.lastStepDataPos != actualStepDataPos): # stepper has to move
 			if (self._motorIsStandBy == True):
@@ -98,17 +96,12 @@ class NeckLeftRight(StepperMotorControl):
 			self._motor.MotorDirectionSet(self._stepData[actualStepDataPos])
 			self.lastStepDataPos = actualStepDataPos
 			self.lastStepDataPosChange = time.time()
-
-		if (time.time() < self.lastStepDataPosChange + 2): # stepper has moved in the last moments
-			if (self._motorIsStandBy == True):
-				self._motorIsStandBy = False
-				self._motor.MotorSpeedSetAB(self._motorPowerOn,self._motorPowerOn)
-				#print("on")
 		else:
-			if (self._motorIsStandBy == False):
-				self._motorIsStandBy = True
-				self._motor.MotorSpeedSetAB(self._motorPowerStandBy,self._motorPowerStandBy) # last stepper move is long time ago
-				#print("off")
+			if (time.time() > self.lastStepDataPosChange + 1): # stepper has not moved in the last moments
+				if (self._motorIsStandBy == False):
+					self._motorIsStandBy = True
+					self._motor.MotorSpeedSetAB(self._motorPowerStandBy,self._motorPowerStandBy) # last stepper move is long time ago
+					#print("off")
 				
 	def Release(self):
 		if (self._released == False):
@@ -121,27 +114,42 @@ class NeckLeftRight(StepperMotorControl):
 
 if __name__ == "__main__":
 	endStop = I2cIoExpanderPcf8574(0x38, useAsInputs=True)
-	motor = NeckLeftRight(0x0b, endStop)
-
-	for i in range(1, 4):
-		
-		motor.targetPos =motor.MaxSteps * 0.3
+	motor = NeckLeftRight(0x0f, endStop)
+	
+	time.sleep(1);
+	
+	for i in range(1,3):
+		motor.targetPos =motor.MaxSteps * 0.1
 		while motor.targetReached == False:
+			motor.Update();
+			time.sleep(motor._actualSpeedDelay);
+			
+		motor.targetPos =motor.MaxSteps * 0
+		while motor.targetReached == False:
+			motor.Update();
+			time.sleep(motor._actualSpeedDelay);
+		
+	#time.sleep(1)
+	#motor.Update();
+
+	#for i in range(1, 4):
+	#	motor.targetPos =motor.MaxSteps * 0.3
+	#	while motor.targetReached == False:
 			#print("wait for target "+ str(motor._targetPos))
 			#motor.Update()
 			#time.sleep(0.1)
-			a=0
+	#		a=0
 
 		#motor.SetTargetPos(0)
 		#while motor.TargetReached() == False:
 		#	print("wait for target "+ str(motor._targetPos))
 		#	time.sleep(1)
 		
-		motor.targetPos = motor.MaxSteps * 0.5
-		while motor.targetReached == False:
+	#	motor.targetPos = motor.MaxSteps * 0.5
+	#	while motor.targetReached == False:
 			#print("wait for target "+ str(motor._targetPos))
 			#motor.Update()
-			a=0
+	#		a=0
 			#time.sleep(0.1)
 
 	motor.Release()

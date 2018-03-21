@@ -29,13 +29,13 @@
 
 import time
 from GroveI2CMotorDriver import GroveI2CMotorDriver
-from I2cIoExpanderPcf8574 import I2cIoExpanderPcf8574
+from I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 
 class StepperMotorControlSynchron():
 
 	_motorName						= "untitled"
 
-	targetPos				= 0
+	___targetPos			= 0
 	calibrating				= False
 	actualPos				= 0 # 0=endstop pos, StepsProRound=360°
 	actualStepDataPos		= 0
@@ -67,6 +67,16 @@ class StepperMotorControlSynchron():
 		self.actualStepDataPos = 0
 		self.lastStepDataPos = -1
 		self.lastStepDataPosChange = 0
+		
+	@property
+	def targetPos(self):
+		return self.___targetPos
+	@targetPos.setter
+	def targetPos(self, targetPos):
+		#print (self.__targetPosKey)
+		targetPos = int(min(self.MaxSteps - self._rampSafeArea, targetPos))
+		targetPos = int(max(self._rampSafeArea, targetPos))
+		self.___targetPos = targetPos
 
 	@property
 	def targetReached(self):
@@ -75,7 +85,7 @@ class StepperMotorControlSynchron():
 	def start(self):
 		self.calibrating = False
 		#self.calibrateHome()
-		self._calculateRampDistance();
+		#self._calculateRampDistance();
 
 	def _endStop(self): # True: endstop is reached
 		raise Exception("not implemented!")
@@ -87,7 +97,7 @@ class StepperMotorControlSynchron():
 	def Update(self):
 
 		if (self.calibrating == True): 
-			time.sleep(1)
+			#time.sleep(1)
 			#print ("NOT! updating " + self._motorName)
 			return
 
@@ -190,6 +200,8 @@ class StepperMotorControlSynchron():
 			self._stepForward()
 			self._updateMotorSteps()
 			time.sleep(self._calibrateSpeedDelay)
+			
+		self.actualPos =0
 
 		self.targetPos = self.actualPos
 		print ("motor " + self._motorName + " calibrated")
@@ -200,7 +212,7 @@ class StepperMotorControlSynchron():
 			print ("shutting down " + self._motorName)
 			self.targetPos = 0
 			while self.targetReached == False:
-				print("wait till targetReached");
+				#print("wait till targetReached");
 				self.Update();
 				time.sleep(self._fastestSpeedDelay);
 				#print ("shutting down " + self._motorName+ str(self.GetActualPos()) + ">" + str(self._targetPos))

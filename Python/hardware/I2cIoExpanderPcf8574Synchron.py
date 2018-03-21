@@ -9,10 +9,9 @@ sys.path.insert(0, my_path)
 sys.path.insert(0,my_path + "/../libs" )
 
 from PCF8574 import PCF8574
-from MultiProcessing import *
-from SharedInts import SharedInts
 
-class I2cIoExpanderPcf8574(MultiProcessing):
+
+class I2cIoExpanderPcf8574Synchron():
 
 	I2cAdress				= 0x38  #Set the address of the Pcf8574
 	_i2c					= None
@@ -22,12 +21,7 @@ class I2cIoExpanderPcf8574(MultiProcessing):
 	__key_actual_value		= 0
 
 	def __init__(self, address, useAsInputs = False):
-		super().__init__()
-		
-		self.__int_values			= SharedInts(max_length=1)
-		self.__key_actual_value		= self.__int_values.get_next_key();
-		
-		self._i2c = self.motor = PCF8574(address, debug=False)
+		self._i2c = PCF8574(address, debug=False)
 		self._useAsInput = useAsInputs
 		if (useAsInputs == True):
 			self._i2c.write(0xff)
@@ -37,11 +31,11 @@ class I2cIoExpanderPcf8574(MultiProcessing):
 				
 	@property
 	def _actual_value(self):
-		return self.__int_values.get_value(self.__key_actual_value)
+		return self.__key_actual_value
 		
 	@_actual_value.setter
 	def _actual_value(self, value):
-		self.__int_values.set_value(self.__key_actual_value, value)
+		self.__key_actual_value = value;
 		
 
 	def setByte(self, value):
@@ -75,7 +69,7 @@ class I2cIoExpanderPcf8574(MultiProcessing):
 		return v
 
 if __name__ == "__main__":
-	i = I2cIoExpanderPcf8574(0x3e,useAsInputs = True)
+	i = I2cIoExpanderPcf8574Synchron(0x3e,useAsInputs = True)
 	while True:
 		a = i.getByte()
 		print("read: " +str(a))

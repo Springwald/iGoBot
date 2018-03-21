@@ -35,33 +35,33 @@ my_path ='/'.join(my_file.split('/')[0:-1])
 sys.path.insert(0,my_path + "/../libs" )
 
 from GroveI2CMotorDriver import GroveI2CMotorDriver
-from I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
+from I2cIoExpanderPcf8574 import I2cIoExpanderPcf8574
 from StepperMotorControlSynchron import StepperMotorControlSynchron
 
-class yAxis(StepperMotorControlSynchron):
+class NeckLeftRight(StepperMotorControlSynchron):
 
-	_motorName					= "yAxis"
+	_motorName					= "x axis"
 
-	_i2CMotorDriverAddress		= 0x0f      # the address of the I2CMotorDriver
+	_i2CMotorDriverAddress		= 0x0d      # the address of the I2CMotorDriver
 
 	_i2cIoExpanderPcf8574		= None      # the I2cIoExpanderPcf8574 the endstop is connected to
-	_endStopBit					= 128       # the bit of the I2cIoExpanderPcf8574 to read the motor endstop
+	_endStopBit					= 32       # the bit of the I2cIoExpanderPcf8574 to read the motor endstop
 
 	_isClosedCircle				= False      # is 0 to maxSteps a full round to the same endstop
 
-	_fastestSpeedDelay			= 0.00015     # how fast can the stepper motor go
+	_fastestSpeedDelay			= 0.0002     # how fast can the stepper motor go
 	_slowestSpeedDelay			= _fastestSpeedDelay * 5
 	_calibrateSpeedDelay		= _fastestSpeedDelay * 3
 	_actualSpeedDelay			= _slowestSpeedDelay
 
 	_rampSpeedup				= 1.01       # how fast is the speed of for motor ramping
-	_rampSafeArea				= 150         # prevent to come nearer than this to the endstop
+	_rampSafeArea				= 20         # prevent to come nearer than this to the endstop
 
-	#_stepData					= [0b0001,0b0101,0b0100,0b0110,0b0010,0b1010,0b1000,0b1001]  # the stepper motor step bits with half steps
-	_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
+	_stepData					= [0b0001,0b0101,0b0100,0b0110,0b0010,0b1010,0b1000,0b1001]  # the stepper motor step bits with half steps
+	#_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
 	#_stepData					= [0b0001,  0b0100,  0b0010, 0b1000]  # the stepper motor step bits
 	#_stepData					= [0b1000, 0b0010 ,  0b0100, 0b0001]  # the stepper motor step bits
-	MaxSteps					= 1000; #3900      # how many motor steps can the motor maximum move 
+	MaxSteps					= 3900      # how many motor steps can the motor maximum move 
 	
 	#_stepData					= [0b0001, 0b0100, 0b0010, 0b1000, ]  # the stepper motor step bits with full steps
 	#MaxSteps					= 800      # how many motor steps can the motor maximum move 
@@ -101,11 +101,11 @@ class yAxis(StepperMotorControlSynchron):
 			self.lastStepDataPos = actualStepDataPos
 			self.lastStepDataPosChange = time.time()
 		else:
-			if (time.time() > self.lastStepDataPosChange + 5): # stepper has not moved in the last moments
+			if (time.time() > self.lastStepDataPosChange + 1): # stepper has not moved in the last moments
 				if (self._motorIsStandBy == False):
 					self._motorIsStandBy = True
 					self._motor.MotorSpeedSetAB(self._motorPowerStandBy,self._motorPowerStandBy) # last stepper move is long time ago
-					print("off")
+					#print("off")
 				
 	def Release(self):
 		if (self._released == False):
@@ -117,46 +117,23 @@ class yAxis(StepperMotorControlSynchron):
 		self.Release()
 
 if __name__ == "__main__":
-	time.sleep(2);
-	
-	endStop = I2cIoExpanderPcf8574Synchron(0x3e, useAsInputs=True)
+	endStop = I2cIoExpanderPcf8574(0x3e, useAsInputs=True)
 	#endStop = None;
-	motor = yAxis(0x0e, endStop)
+	motor = NeckLeftRight(0x0d, endStop)
 	
 	#time.sleep(1);
 	
-	sleeper = 0.0002;
-	
-	
-	
-	#motor._motor.MotorSpeedSetAB(motor._motorPowerOn,motor._motorPowerOn)
-	
-	test = 500;
-	
-		
-	print ("backwards")
-	for i in range(1,test):
-		motor._stepBackwards();
-		motor._updateMotorSteps();
-		time.sleep(sleeper);
-		
-	for i in range(1,test):
-		motor._stepForward();
-		motor._updateMotorSteps();
-		time.sleep(sleeper);
-	
-	if (False):
-		for i in range(1,test):
-			motor.targetPos = motor.MaxSteps 
-			while motor.targetReached == False:
-				motor.Update();
-				time.sleep(motor._actualSpeedDelay);
-				
-			motor.targetPos =motor.MaxSteps * 0
-			while motor.targetReached == False:
-				motor.Update();
-				time.sleep(motor._actualSpeedDelay);
+	for i in range(1,2):
+		motor.targetPos = motor.MaxSteps #* 0.1
+		while motor.targetReached == False:
+			motor.Update();
+			time.sleep(motor._actualSpeedDelay);
 			
+		motor.targetPos =motor.MaxSteps * 0
+		while motor.targetReached == False:
+			motor.Update();
+			time.sleep(motor._actualSpeedDelay);
+		
 	#time.sleep(1)
 	#motor.Update();
 

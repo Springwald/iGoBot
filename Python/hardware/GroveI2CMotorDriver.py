@@ -86,14 +86,14 @@ class GroveI2CMotorDriver:
 		#time.sleep(.002)
 		
 if __name__ == "__main__":
-	tester = GroveI2CMotorDriver(0x0c);
+	tester = GroveI2CMotorDriver(0x0e);
 	
 	tester.MotorSpeedSetAB(100,100);
 	#_stepData = [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
 	#_stepData = [0b0001, 0b1000, 0b0010, 0b0100]  # the stepper motor step bits with half steps
-	_stepData = [0b0001, 0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101]
+	_stepData = [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001];
 	
-	speed = 0.005;
+	speed = 0.0002;
 	length = 60;
 	
 	for n in range(0,3):

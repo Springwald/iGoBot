@@ -58,21 +58,21 @@ class iGoBot:
 	_zAxis 							= None;
 	_gripper 						= None;
 	
-	_zPosUp							= 100;
-	_zPosOnBoard					= 695;
+	_zPosUp							= 600;
+	_zPosOnBoard					= 720;
 	
-	_9x9_xMin						= 730;
+	_9x9_xMin						= 765;
 	_9x9_xMax						= 3350;
 	_9x9_yMin						= 90;
-	_9x9_yMax						= 2850;
+	_9x9_yMax						= 2880;
 	
 
 	def __init__(self):
-		pygame.init()
-		pygame.mixer.quit() # to prevent conflicts with speech output (audio device busy)
-		screenInfo = pygame.display.Info()
+		#pygame.init()
+		#pygame.mixer.quit() # to prevent conflicts with speech output (audio device busy)
+		#screenInfo = pygame.display.Info()
 		#if (screenInfo.current_w > 900):
-		self.lcd = pygame.display.set_mode((800,480))
+		#self.lcd = pygame.display.set_mode((800,480))
 		#else:
 		#	self.lcd = pygame.display.set_mode((800,480), FULLSCREEN, 16)
 		
@@ -84,12 +84,17 @@ class iGoBot:
 		self._gripper = Gripper(i2cAdress=self._gripperAdress, busnum=1)
 		self._gripper.openGripper();
 		
-		self.MoveToXY(self._9x9_xMin, self._9x9_yMin);
+		self.MoveToXY(self._9x9_xMin + (self._9x9_xMax - self._9x9_xMin) / 2, self._9x9_yMin + (self._9x9_yMax - self._9x9_yMin) / 2);
 		self.TakeStoneFromBoard();
+		
+		self.MoveToXY(self._9x9_xMin, self._9x9_yMin);
+		self.PutStoneToBoard();
+		self.TakeStoneFromBoard();
+		
 		self.MoveToXY(self._9x9_xMax, self._9x9_yMax);
 		self.PutStoneToBoard();
-		
 		self.TakeStoneFromBoard();
+		
 		self.MoveToXY(self._9x9_xMin + (self._9x9_xMax - self._9x9_xMin) / 2, self._9x9_yMin + (self._9x9_yMax - self._9x9_yMin) / 2);
 		self.PutStoneToBoard();
 
@@ -111,6 +116,13 @@ class iGoBot:
 		while(self._gripper.allTargetsReached == False):
 			time.sleep(0.4);
 		self._zAxis.MoveToPosAndWait(self._zPosUp);
+		return;
+	
+	# To give the motors the chance to go to sleep
+	def UpdateMotors(self):
+		self._xAxis.Update();
+		self._yAxis.Update();
+		self._zAxis.Update();
 		return;
 
 	def MoveToXY(self, xPos, yPos):
@@ -149,21 +161,16 @@ if __name__ == "__main__":
 	
 	bot = iGoBot()
 	
+	atexit.register(exit_handler)
+	
 	ended = False;
 	
-	while ended == False:
+	while ended == True:
 		
-		time.sleep(0.5)
+		time.sleep(1)
 		
-		#roobert.Update()
+		bot.UpdateMotors();
 		
-		#roobert.RotateDemoForPhoto();
-		
-		#roobert.RandomHeadMovement()
-		
-		#roobert.FollowFace()
-		#roobert.drive_avoiding_obstacles()
-
 		events = pygame.event.get()
 	
 		for event in events:
@@ -176,6 +183,8 @@ if __name__ == "__main__":
 					#roobert.Greet()
 					#start_new_thread(roobert.Greet,())
 					a=0
+					
+
 
         
         

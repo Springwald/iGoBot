@@ -37,8 +37,7 @@ my_path ='/'.join(my_file.split('/')[0:-1])
 
 sys.path.insert(0,my_path + "/../libs" )
 
-from MultiProcessing import *
-from I2cIoExpanderPcf8574 import I2cIoExpanderPcf8574
+#from I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 
 from array import array
 import Adafruit_PCA9685
@@ -46,43 +45,33 @@ import Adafruit_PCA9685
 from SharedInts import SharedInts
 from SharedFloats import SharedFloats
 
-class Gripper(MultiProcessing):
+class Gripper():
 	
 	_pwm		= None
 	_released 	= False
 	
 	_servoCount = 1;
-	
-	
+
 	_gripperOpen	= 340
 	_gripperClosed	= 200
 	
 	_lastUpdateTime	= time.time()
+	
+	__last_servo_set_time = 0;
+	
+	allTargetsReached = False;
 	
 	_actualSpeedDelay = 0.01
 	_maxStepsPerSecond = 190
 	
 	_name 		= "gripper"
 	
-	__targets 					= SharedInts(max_length=_servoCount)
-	__values					= SharedFloats(max_length=_servoCount)
-	
-	__shared_ints__				= None
-	__targets_reached_int__		= 0
-		
-	__key_last_servo_set_time	= MultiProcessing.get_next_key()
-
+	_targets 					= [0]
+	_values						= [0.0]
 
 	
 	def __init__(self, i2cAdress, busnum):
-		super().__init__(prio=-20)
-		
-		self.__shared_ints__			= SharedInts(max_length=3)
-		self.__targets_reached_int__	= self.__shared_ints__.get_next_key()
-				
-			
-		self._processName = self._name
-		
+
 		self.__last_servo_set_time = 0
 
 		# Initialise the PCA9685 using the default address (0x40).
@@ -94,43 +83,12 @@ class Gripper(MultiProcessing):
 		self._pwm.set_pwm_freq(60)
 		
 		# reset servo
-		self.__targets.set_value(0, int(self._gripperOpen))
-		self.__values.set_value(0, int(self._gripperOpen))
-		self.setServo(0,int(self._gripperOpen))	
-			
-		self.allTargetsReached = False
-		
-		super().StartUpdating()
-
-	## multi process properties START ##
+		self._targets[0] = int(self._gripperOpen);
+		self._values[0] = int(self._gripperOpen);
+		self.setServo(0, int(self._gripperOpen))	
 	
-	@property
-	def __last_servo_set_time(self):
-		return self.GetSharedValue(self.__key_last_servo_set_time)
-	@__last_servo_set_time.setter
-	def __last_servo_set_time(self, value):
-		self.SetSharedValue(self.__key_last_servo_set_time, value)
-		
-	@property
-	def allTargetsReached(self):
-		#print (self.__shared_ints__.get_value(self.__targets_reached_int__)== 1)
-		return self.__shared_ints__.get_value(self.__targets_reached_int__)== 1
-	@allTargetsReached.setter
-	def allTargetsReached(self, value):
-		if (value == True):
-			self.__shared_ints__.set_value(self.__targets_reached_int__,1)
-		else:
-			self.__shared_ints__.set_value(self.__targets_reached_int__,0)
-
-	## multi process properties END ##
 		
 	def Update(self):
-		#print("update start " + str(time.time()))
-		if (super().updating_ended == True):
-			return
-		
-		#print("update 1")
-		
 		timeDiff = time.time() - self._lastUpdateTime
 		if (timeDiff < self._actualSpeedDelay):
 			time.sleep(self._actualSpeedDelay - timeDiff)
@@ -142,7 +100,7 @@ class Gripper(MultiProcessing):
 		#print(maxSpeed)
 		for i in range(0,self._servoCount):
 			reachedThis = True
-			diff = int(self.__targets.get_value(i) - self.__values.get_value(i))
+			diff = int(self._targets[i] - self._values[i])
 			plus = 0
 			if (diff > 0):
 				plus = max(0.1, min(diff , maxSpeed))
@@ -152,8 +110,8 @@ class Gripper(MultiProcessing):
 				reachedThis = False
 			if (reachedThis == False):
 				allReached = False
-				newValue = self.__values.get_value(i) + plus
-				self.__values.set_value(i,newValue)
+				newValue = self._values[0] + plus
+				self._values[i] = newValue;
 				self.setServo(i,newValue)
 		self.allTargetsReached = allReached
 		self._lastUpdateTime = time.time()
@@ -166,15 +124,18 @@ class Gripper(MultiProcessing):
 		#print("update end")
 
 	def openGripper(self):
-		self.__targets.set_value(0, self._gripperOpen)
+		self._targets[0] = self._gripperOpen;
 		self.allTargetsReached = False
+		self.waitTillTargetReached();
 
 	def closeGripper(self):
-		self.__targets.set_value(0, self._gripperClosed)
+		self._targets[0] = self._gripperClosed;
 		self.allTargetsReached = False
+		self.waitTillTargetReached();
 
 	def waitTillTargetReached(self):
 		while (self.allTargetsReached == False):
+			self.Update();
 			time.sleep(self._actualSpeedDelay)
 			
 	def setServo(self, port, value):
@@ -207,7 +168,6 @@ class Gripper(MultiProcessing):
 			self._released = True
 			self.turnOff()
 			print("super().EndUpdating() " + self._name)
-			super().EndUpdating()
 			
 	def __del__(self):
 		self.Release()
@@ -226,6 +186,6 @@ if __name__ == "__main__":
 	time.sleep(2)
 	
 	right.closeGripper();
-	time.sleep(10)
+	time.sleep(1)
 	right.openGripper();
-	time.sleep(2)
+	time.sleep(1)

@@ -47,16 +47,6 @@ class yAxis(StepperMotorControlSynchron):
 	_i2cIoExpanderPcf8574		= None      # the I2cIoExpanderPcf8574 the endstop is connected to
 	_endStopBit					= 128       # the bit of the I2cIoExpanderPcf8574 to read the motor endstop
 
-	_isClosedCircle				= False      # is 0 to maxSteps a full round to the same endstop
-
-	_fastestSpeedDelay			= 0.0001     # how fast can the stepper motor go
-	_slowestSpeedDelay			= _fastestSpeedDelay * 10
-	_calibrateSpeedDelay		= _fastestSpeedDelay * 5
-	_actualSpeedDelay			= _slowestSpeedDelay
-
-	_rampSpeedup				= 1.005      # how fast is the speed of for motor ramping
-	_rampSafeArea				= 50         # prevent to come nearer than this to the endstop
-
 	#_stepData					= [0b0001,0b0101,0b0100,0b0110,0b0010,0b1010,0b1000,0b1001]  # the stepper motor step bits with half steps
 	_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
 	#_stepData					= [0b0001,  0b0100,  0b0010, 0b1000]  # the stepper motor step bits

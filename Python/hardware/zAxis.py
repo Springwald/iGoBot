@@ -49,9 +49,9 @@ class zAxis(StepperMotorControlSynchron):
 
 	_isClosedCircle				= False      # is 0 to maxSteps a full round to the same endstop
 
-	_fastestSpeedDelay			= 0.0002     # how fast can the stepper motor go
-	_slowestSpeedDelay			= _fastestSpeedDelay * 5
-	_calibrateSpeedDelay		= _fastestSpeedDelay * 3
+	_fastestSpeedDelay			= 0.0001     # how fast can the stepper motor go
+	_slowestSpeedDelay			= _fastestSpeedDelay * 10
+	_calibrateSpeedDelay		= _fastestSpeedDelay * 5
 	_actualSpeedDelay			= _slowestSpeedDelay
 
 	_rampSpeedup				= 1.01       # how fast is the speed of for motor ramping
@@ -61,7 +61,7 @@ class zAxis(StepperMotorControlSynchron):
 	_stepData					= [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001]  # the stepper motor step bits with half steps
 	#_stepData					= [0b0001,  0b0100,  0b0010, 0b1000]  # the stepper motor step bits
 	#_stepData					= [0b1000, 0b0010 ,  0b0100, 0b0001]  # the stepper motor step bits
-	MaxSteps					= 600      # how many motor steps can the motor maximum move 
+	MaxSteps					= 940      # how many motor steps can the motor maximum move 
 	
 	#_stepData					= [0b0001, 0b0100, 0b0010, 0b1000, ]  # the stepper motor step bits with full steps
 	#MaxSteps					= 800      # how many motor steps can the motor maximum move 

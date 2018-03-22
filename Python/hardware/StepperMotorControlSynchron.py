@@ -84,8 +84,8 @@ class StepperMotorControlSynchron():
 	
 	def start(self):
 		self.calibrating = False
-		#self.calibrateHome()
-		#self._calculateRampDistance();
+		self.calibrateHome()
+		self._calculateRampDistance();
 
 	def _endStop(self): # True: endstop is reached
 		raise Exception("not implemented!")

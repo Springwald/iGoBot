@@ -47,7 +47,7 @@ class StepperMotorControlSynchron():
 
 	_fastestSpeedDelay			= 0.00005     # how fast can the stepper motor go
 	_slowestSpeedDelay			= _fastestSpeedDelay * 20
-	_calibrateSpeedDelay		= _fastestSpeedDelay * 10
+	_calibrateSpeedDelay		= _fastestSpeedDelay * 20
 	_actualSpeedDelay			= _slowestSpeedDelay
 	
 	_rampSpeedup				= 1.02      # how fast is the speed of for motor ramping
@@ -109,8 +109,6 @@ class StepperMotorControlSynchron():
 		if (self._releasedMotor == True):
 			return
 		
-		#for i in range(1, 4):
-		#actualStepDataPos = self.actualStepDataPos
 		actualStepDataPos = self.actualStepDataPos
 		if (self.lastStepDataPos != actualStepDataPos): # stepper has to move
 			if (self._motorIsStandBy == True):
@@ -125,16 +123,9 @@ class StepperMotorControlSynchron():
 				if (self._motorIsStandBy == False):
 					self._motorIsStandBy = True
 					self._motor.MotorSpeedSetAB(self._motorPowerStandBy,self._motorPowerStandBy) # last stepper move is long time ago
-					print("off")
-		
-					
-	#def MoveToPosAndWait(self, pos):
-		#self.targetPos =pos;
-		#while(self.targetReached==False):
-			#self.Update();
+					#print("off")
 
 	def Update(self):
-
 		if (self.calibrating == True): 
 			return
        
@@ -153,8 +144,6 @@ class StepperMotorControlSynchron():
 				if (self._actualSpeedDelay > self._fastestSpeedDelay):
 					self._actualSpeedDelay= max(self._fastestSpeedDelay, self._actualSpeedDelay / self._rampSpeedup)
 
-			#self._actualSpeed = self._fastestSpeedDelay;
-
 			if (int(distance) > 0):
 				self._stepForward()
 				self._updateMotorSteps()
@@ -164,8 +153,6 @@ class StepperMotorControlSynchron():
 					self._updateMotorSteps()
 				else:
 					self._updateMotorSteps()
-					#time.sleep(0.5)
-					
 
 	def _calculateRampDistance(self):
 		self._rampDistance = 0;

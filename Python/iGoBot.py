@@ -65,10 +65,10 @@ class iGoBot:
 	_zPosUp							= 600;
 	_zPosOnBoard					= 720;
 	
-	_9x9_xMin						= 765;
-	_9x9_xMax						= 3350;
-	_9x9_yMin						= 90;
-	_9x9_yMax						= 2880;
+	_13x13_xMin						= 735;
+	_13x13_xMax						= 3350;
+	_13x13_yMin						= 90;
+	_13x13_yMax						= 2900;
 	
 
 	def __init__(self):
@@ -86,24 +86,28 @@ class iGoBot:
 		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
 		self.WaitForAllMotors();
 		
+		self.MoveToXY(self._13x13_xMax,self._13x13_yMax);
+		self.MoveToZ(self._zPosOnBoard);
+		time.sleep(10);
+		
 		self._gripper = Gripper(i2cAdress=self._gripperAdress, busnum=1)
 		self._gripper.openGripper();
 		
 		self._light = Light(self._lightGrovePort);
 		self._light.On();
 		
-		self.MoveToXY(self._9x9_xMin + (self._9x9_xMax - self._9x9_xMin) / 2, self._9x9_yMin + (self._9x9_yMax - self._9x9_yMin) / 2);
+		self.MoveToXY(self._13x13_xMin + (self._13x13_xMax - self._13x13_xMin) / 2, self._13x13_yMin + (self._13x13_yMax - self._13x13_yMin) / 2);
 		self.TakeStoneFromBoard();
 		
-		self.MoveToXY(self._9x9_xMin, self._9x9_yMin);
+		self.MoveToXY(self._13x13_xMin, self._13x13_yMin);
 		self.PutStoneToBoard();
 		self.TakeStoneFromBoard();
 		
-		self.MoveToXY(self._9x9_xMax, self._9x9_yMax);
+		self.MoveToXY(self._13x13_xMax, self._13x13_yMax);
 		self.PutStoneToBoard();
 		self.TakeStoneFromBoard();
 		
-		self.MoveToXY(self._9x9_xMin + (self._9x9_xMax - self._9x9_xMin) / 2, self._9x9_yMin + (self._9x9_yMax - self._9x9_yMin) / 2);
+		self.MoveToXY(self._13x13_xMin + (self._13x13_xMax - self._13x13_xMin) / 2, self._13x13_yMin + (self._13x13_yMax - self._13x13_yMin) / 2);
 		self.PutStoneToBoard();
 
 	def TakeStoneFromBoard(self):

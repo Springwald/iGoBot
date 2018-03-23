@@ -34,11 +34,13 @@ import time
 from random import randrange, uniform
 import math
 import pygame
+import grovepi
 
 from hardware.PCF8574 import PCF8574
 from hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 from hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
 from hardware.Gripper import Gripper
+from hardware.Light import Light
 
 import atexit
 
@@ -49,6 +51,7 @@ class iGoBot:
 	_yAxisAdress					= 0x0e
 	_zAxisAdress					= 0x0f
 	_gripperAdress					= 0x40
+	_lightGrovePort					= 8
 	
 	_ended							= False
 	_released						= False
@@ -57,6 +60,7 @@ class iGoBot:
 	_yAxis 							= None;
 	_zAxis 							= None;
 	_gripper 						= None;
+	_lightGrovePort					= None;
 	
 	_zPosUp							= 600;
 	_zPosOnBoard					= 720;
@@ -80,9 +84,13 @@ class iGoBot:
 		self._zAxis = StepperMotorControlSynchron("z-axis", self._zAxisAdress, 940,   endStop,  64, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
 		self._xAxis = StepperMotorControlSynchron("x-axis", self._xAxisAdress, 4100,  endStop,  32, [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001])
 		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
+		self.WaitForAllMotors();
 		
 		self._gripper = Gripper(i2cAdress=self._gripperAdress, busnum=1)
 		self._gripper.openGripper();
+		
+		self._light = Light(self._lightGrovePort);
+		self._light.On();
 		
 		self.MoveToXY(self._9x9_xMin + (self._9x9_xMax - self._9x9_xMin) / 2, self._9x9_yMin + (self._9x9_yMax - self._9x9_yMin) / 2);
 		self.TakeStoneFromBoard();
@@ -99,24 +107,31 @@ class iGoBot:
 		self.PutStoneToBoard();
 
 	def TakeStoneFromBoard(self):
-		self._zAxis.MoveToPosAndWait(self._zPosUp);
-		self._gripper.openGripper();
-		while(self._gripper.allTargetsReached == False):
-			time.sleep(0.4);
-		self._zAxis.MoveToPosAndWait(self._zPosOnBoard);
+		self.MoveToZ(self._zPosUp);
+		self.OpenGripper();
+		self.MoveToZ(self._zPosOnBoard);
 		self._gripper.closeGripper();
-		while(self._gripper.allTargetsReached == False):
-			time.sleep(0.4);
-		self._zAxis.MoveToPosAndWait(self._zPosUp);
+		self.CloseGripper();
+		self.MoveToZ(self._zPosUp);
 		return;
 		
 	def PutStoneToBoard(self):
-		self._zAxis.MoveToPosAndWait(self._zPosOnBoard);
+		self.MoveToZ(self._zPosOnBoard);
+		self.OpenGripper();
+		self.MoveToZ(self._zPosUp);
+		return;
+		
+	def OpenGripper(self):
 		self._gripper.openGripper();
 		while(self._gripper.allTargetsReached == False):
-			time.sleep(0.4);
-		self._zAxis.MoveToPosAndWait(self._zPosUp);
-		return;
+			self._gripper.Update();
+			self.UpdateMotors();
+			
+	def CloseGripper(self):
+		self._gripper.closeGripper();
+		while(self._gripper.allTargetsReached == False):
+			self._gripper.Update();
+			self.UpdateMotors();
 	
 	# To give the motors the chance to go to sleep
 	def UpdateMotors(self):
@@ -124,11 +139,32 @@ class iGoBot:
 		self._yAxis.Update();
 		self._zAxis.Update();
 		return;
-
-	def MoveToXY(self, xPos, yPos):
-		self._xAxis.MoveToPosAndWait(xPos);
-		self._yAxis.MoveToPosAndWait(yPos);
 		
+	def WaitForAllMotors(self):
+		while(self._zAxis.targetReached==False):
+			self.UpdateMotors();
+		while(self._xAxis.targetReached==False):
+			self.UpdateMotors();
+		while(self._yAxis.targetReached==False):
+			self.UpdateMotors();
+
+	def MoveToXY(self, posX, posY):	
+		self.MoveToX(posX);
+		self.MoveToY(posY);
+
+	def MoveToX(self, pos):
+		self._xAxis.targetPos = pos;
+		self.WaitForAllMotors();
+			
+	def MoveToY(self, pos):
+		self._yAxis.targetPos = pos;
+		self.WaitForAllMotors();
+		
+	def MoveToZ(self, pos):
+		self._zAxis.targetPos = pos;
+		self.WaitForAllMotors();
+
+
 	def Release(self):
 		if (self._released == False):
 			self._released = True
@@ -137,17 +173,23 @@ class iGoBot:
 			if (self._gripper != None):
 				self._gripper.openGripper();
 				while(self._gripper.allTargetsReached == False):
-					time.sleep(0.4);
+					self._gripper.Update();
 				self._gripper.Release();
 			
 			if (self._zAxis != None):
+				self.MoveToZ(0);
 				self._zAxis.Release()
 			
 			if (self._xAxis != None):
+				self.MoveToX(0);
 				self._xAxis.Release()
 
 			if (self._yAxis != None):
+				self.MoveToY(0);
 				self._yAxis.Release()
+				
+			if (self._light != None):
+				self._light.Off();
 
 			self._ended = True
 

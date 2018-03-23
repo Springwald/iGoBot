@@ -128,37 +128,16 @@ class StepperMotorControlSynchron():
 					print("off")
 		
 					
-	def MoveToPosAndWait(self, pos):
-		self.targetPos =pos;
-		while(self.targetReached==False):
-			self.Update();
+	#def MoveToPosAndWait(self, pos):
+		#self.targetPos =pos;
+		#while(self.targetReached==False):
+			#self.Update();
 
 	def Update(self):
 
 		if (self.calibrating == True): 
-			#time.sleep(1)
-			#print ("NOT! updating " + self._motorName)
 			return
-
-		#print ("updating " + self._motorName + " :" + str(self.actualPos));
-		# Check if unexpected end top contact
-		#if (self._endStop()):
-		#	print ("oha - the endstop of motor " + self._motorName + " is reached this should not happen when running normal")
-			# oha - the endstop is reached this should not happen when running normal
-		#	if (self.actualPos > self._maxSteps / 2):
-				# is over the half round -> drive back half a round
-			#	for i in range(1, int(self._maxSteps / 2)):
-			#		self._stepBackwards()
-			#		self._updateMotorSteps()
-			##else:
-				# is under the half round -> calibrate normal
-		#	self.calibrateHome()
-
-		# check if have to move to target
-		#timeSinceLastUpdate = time.time() - self.lastStepDataPosChange
-		#if (timeSinceLastUpdate < self._actualSpeedDelay):
-		#	time.sleep((self._actualSpeedDelay - timeSinceLastUpdate)/2)
-        
+       
 		# check if stepper update can be done
 		if (self.targetReached==True):
 			self._actualSpeedDelay = self._slowestSpeedDelay
@@ -174,7 +153,7 @@ class StepperMotorControlSynchron():
 				if (self._actualSpeedDelay > self._fastestSpeedDelay):
 					self._actualSpeedDelay= max(self._fastestSpeedDelay, self._actualSpeedDelay / self._rampSpeedup)
 
-			self._actualSpeed = self._fastestSpeedDelay;
+			#self._actualSpeed = self._fastestSpeedDelay;
 
 			if (int(distance) > 0):
 				self._stepForward()

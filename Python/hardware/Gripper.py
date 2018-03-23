@@ -55,8 +55,6 @@ class Gripper():
 	_gripperOpen	= 340
 	_gripperClosed	= 200
 	
-	_lastUpdateTime	= time.time()
-	
 	__last_servo_set_time = 0;
 	
 	allTargetsReached = False;
@@ -89,14 +87,9 @@ class Gripper():
 	
 		
 	def Update(self):
-		timeDiff = time.time() - self._lastUpdateTime
-		if (timeDiff < self._actualSpeedDelay):
-			time.sleep(self._actualSpeedDelay - timeDiff)
-		time.sleep(self._actualSpeedDelay)
-		timeDiff = time.time() - self._lastUpdateTime
-		timeDiff = min(timeDiff, self._actualSpeedDelay * 2)
+		
 		allReached = True
-		maxSpeed = self._maxStepsPerSecond * timeDiff
+		maxSpeed = self._maxStepsPerSecond * self._actualSpeedDelay;
 		#print(maxSpeed)
 		for i in range(0,self._servoCount):
 			reachedThis = True
@@ -113,9 +106,12 @@ class Gripper():
 				newValue = self._values[0] + plus
 				self._values[i] = newValue;
 				self.setServo(i,newValue)
+				
 		self.allTargetsReached = allReached
-		self._lastUpdateTime = time.time()
-		
+
+		if (allReached == False):
+			time.sleep(self._actualSpeedDelay)
+			
 		if (self.__last_servo_set_time + 5 < time.time()):
 			# long time nothing done
 			#self.power_off()
@@ -126,17 +122,15 @@ class Gripper():
 	def openGripper(self):
 		self._targets[0] = self._gripperOpen;
 		self.allTargetsReached = False
-		self.waitTillTargetReached();
 
 	def closeGripper(self):
 		self._targets[0] = self._gripperClosed;
 		self.allTargetsReached = False
-		self.waitTillTargetReached();
 
-	def waitTillTargetReached(self):
-		while (self.allTargetsReached == False):
-			self.Update();
-			time.sleep(self._actualSpeedDelay)
+	#def waitTillTargetReached(self):
+	#	while (self.allTargetsReached == False):
+	#		self.Update();
+	#		time.sleep(self._actualSpeedDelay)
 			
 	def setServo(self, port, value):
 		self._pwm.set_pwm(port, 0, int(value))
@@ -165,6 +159,8 @@ class Gripper():
 			print("releasing " + self._name)
 			#self.home()
 			self.openGripper();
+			while(self.allTargetsReached == False):
+				self.Update();
 			self._released = True
 			self.turnOff()
 			print("super().EndUpdating() " + self._name)
@@ -186,6 +182,11 @@ if __name__ == "__main__":
 	time.sleep(2)
 	
 	right.closeGripper();
+	while(right.allTargetsReached == False):
+		right.Update();
 	time.sleep(1)
+	
 	right.openGripper();
+	while(right.allTargetsReached == False):
+		right.Update();
 	time.sleep(1)

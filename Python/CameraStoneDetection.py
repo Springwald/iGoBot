@@ -49,22 +49,18 @@ class CameraStoneDetection():
 	_camera						= None
 	_rawCapture					= None
 	
-	_cascade					= None
-	_nested						= None
-	
+	_cascadeBlack				= None
+	_cascadeWhite				= None
+
 	__cameraResolutionX 		= 640
 	__cameraResolutionY 		= 480
 	
-	posXFace = 0;
-	posYFace = 0;
+	posXFace = 0;#-1 # -1=no face, 0=max left, 1=max right
+	posYFace = 0;#-1 # -1=no face, 0=max bottom, 1=max top
 
-	__posXFaceKey 				= MultiProcessing.get_next_key() #-1 # -1=no face, 0=max left, 1=max right
-	__posYFaceKey 				= MultiProcessing.get_next_key() #-1 # -1=no face, 0=max bottom, 1=max top
-	
 	_released						= False
 	
 	_delay_seconds				= 1
-	_delay_seconds_when_idle	= 1.5
 
 	def __init__(self):
 		print("camera init")
@@ -73,7 +69,7 @@ class CameraStoneDetection():
 		
 		
 	def detect(self, img, cascade):
-		rects = cascade.detectMultiScale(img, scaleFactor=1.3, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 15), int( self.__cameraResolutionY / 15)), flags=cv2.CASCADE_SCALE_IMAGE)
+		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 40), int( self.__cameraResolutionY / 40)), flags=cv2.CASCADE_SCALE_IMAGE)
 		if len(rects) == 0:
 			return []
 		rects[:,2:] += rects[:,:2]
@@ -81,6 +77,7 @@ class CameraStoneDetection():
 
 	def draw_rects(self, img, rects, color):
 		for x1, y1, x2, y2 in rects:
+			#print("detected");
 			cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
 			
 			
@@ -93,88 +90,54 @@ class CameraStoneDetection():
 		# initialize the camera and grab a reference to the raw camera capture
 		self._camera = PiCamera()
 		self._camera.resolution = (self.__cameraResolutionX, self.__cameraResolutionY)
-		self._camera.framerate = 32
-		self._rawCapture = PiRGBArray(self._camera) #, size=(self._camera.resolution.width, self._camera.resolution.height))
+		self._camera.contrast = 60;
+		self._camera.brightness = 50;
+		self._camera.framerate = 8
+		self._rawCapture = PiRGBArray(self._camera, size=(self._camera.resolution.width, self._camera.resolution.height))
 		
 		# allow the camera to warmup
 		time.sleep(0.1)
 		
-		cascade_fn =  "/home/pi/opencv-3.1.0/data/haarcascades/haarcascade_frontalface_alt.xml"
-		nested_fn  =  "/home/pi/opencv-3.1.0/data/haarcascades/haarcascade_eye.xml"
-		#cascade_fn = args.get('--cascade', "../../data/haarcascades/haarcascade_frontalface_default.xml")
-		#nested_fn  = args.get('--nested-cascade', "../../data/haarcascades/haarcascade_eye.xml")
-	
-		self._cascade = cv2.CascadeClassifier(cascade_fn)
-		self._nested = cv2.CascadeClassifier(nested_fn)
+		cascade_black_fn =  "stoneDetection/black-cascade.xml"
+		cascade_white_fn =  "stoneDetection/white-cascade.xml"
+		self._cascadeBlack = cv2.CascadeClassifier(cascade_black_fn)
+		self._cascadeWhite = cv2.CascadeClassifier(cascade_white_fn)
 		
+		# capture frames from the camera
 		for frame in self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True):
-
-			if (super().updating_ended == True):
-				return;
-						
-			# grab the raw NumPy array representing the image, then initialize the timestamp
-			# and occupied/unoccupied text
+			# grab the raw NumPy array representing the image - this array
+			# will be 3D, representing the width, height, and # of channels
 			image = frame.array
-			
+		 
+			# show the frame
+			#cv2.imshow("Frame", image)
+			key = cv2.waitKey(1) & 0xFF
+		 
+			## clear the stream in preparation for the next frame
+			self._rawCapture.truncate(0)
+		 
+			## if the `q` key was pressed, break from the loop
+			if key == ord("q"):
+				break
+
 			# local modules
 			#from video import create_capture
 			from common import clock, draw_str
 			
-			#self._camera.capture(self._rawCapture, format="bgr")
-			#image = self._rawCapture.array
-			
-			cv2.imshow('image', image)
-		 
+			self._camera.capture(self._rawCapture, format="bgr")
+			image = self._rawCapture.array
+					
 			# clear the stream in preparation for the next frame
 			self._rawCapture.truncate(0)
-				
-			gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-			gray = cv2.equalizeHist(gray)
 
-			t = clock()
-			rects = self.detect(gray, self._cascade)
+			#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+			#gray = cv2.equalizeHist(gray)
+			rects = self.detect(image, self._cascadeBlack)
 					
 			if (self._showImage==True):
 				vis = image.copy()
 				self.draw_rects(vis, rects, (0, 255, 0))
-				
-			dt = 0
-			
-			found_something = False
-			
-			if not self._nested.empty():
-				posX = -1
-				posY = -1
-				bestWidth = -1
-				for x1, y1, x2, y2 in rects:
-					width = x2-x1
-					if (width > bestWidth):
-						bestWidth = width
-						posX = (x1+(x2-x1)/2) / self._camera.resolution.width
-						posY = (y1+(y2-y1)/2) / self._camera.resolution.height
-					if (self._showImage==True):
-						roi = gray[y1:y2, x1:x2]
-						vis_roi = vis[y1:y2, x1:x2]
-						subrects = self.detect(roi.copy(), self._nested)
-						self.draw_rects(vis_roi, subrects, (255, 0, 0))
-				self.posXFace = posX
-				self.posYFace = posY
-				
-				dt = clock() - t
-				
-				if (posX != -1):
-					#print('camera time: %.1f ms' % (dt*1000))
-					found_something = True
-			
-			if (self._showImage==True):
-				draw_str(vis, (20, 20), 'time: %.1f ms' % (dt*1000))
-				cv2.imshow('facedetect', vis)
-				
-			if (found_something == True):
-				time.sleep(self._delay_seconds)
-			else:
-				time.sleep(self._delay_seconds_when_idle)
-				
+				cv2.imshow("stone detection", vis)
 
 	def ResetFace(self):
 		self.posXFace = -1
@@ -184,17 +147,18 @@ class CameraStoneDetection():
 		if (self._released == False):
 			self._released = True
 			print ("shutting down camera")
-			super().EndUpdating()
+			#super().EndUpdating()
 
 	def __del__(self):
 			self.Release()
 
 if __name__ == '__main__':
 	
-	testCamera = Camera();
+	testCamera = CameraStoneDetection();
 	
 	
 	while (True):
+		testCamera.Update();
 		if (testCamera.posXFace != -1):
 			print(str(testCamera.posXFace) + " / " + str(testCamera.posYFace))
 			testCamera.ResetFace()

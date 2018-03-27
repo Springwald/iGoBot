@@ -63,7 +63,7 @@ if __name__ == "__main__":
 	
 	for i in range(1,3):
 		light.On();
-		time.sleep(1);
+		time.sleep(10);
 		light.Off();
 		time.sleep(1);
 	

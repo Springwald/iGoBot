@@ -53,14 +53,14 @@ class Gripper():
 	_servoCount = 1;
 
 	_gripperOpen	= 340
-	_gripperClosed	= 200
+	_gripperClosed	= 220
 	
 	__last_servo_set_time = 0;
 	
 	allTargetsReached = False;
 	
 	_actualSpeedDelay = 0.01
-	_maxStepsPerSecond = 190
+	_maxStepsPerSecond = 390
 	
 	_name 		= "gripper"
 	

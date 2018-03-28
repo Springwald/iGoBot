@@ -52,8 +52,8 @@ class CameraStoneDetection():
 	_cascadeBlack				= None
 	_cascadeWhite				= None
 	
-	__cameraResolutionX 		= 640
-	__cameraResolutionY 		= 480
+	__cameraResolutionX 		= 640*2
+	__cameraResolutionY 		= 480*2
 	
 	_windowName 				= "iGoBot camera";
 	

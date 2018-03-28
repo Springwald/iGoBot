@@ -57,8 +57,8 @@ class CameraStoneDetection():
 	
 	_windowName 				= "iGoBot camera";
 	
-	_rectsBlack					= [];
-	_rectsWhite					= [];
+	RectsBlack					= [];
+	RectsWhite					= [];
 	
 	_released					= False
 
@@ -72,12 +72,12 @@ class CameraStoneDetection():
 		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 40), int( self.__cameraResolutionY / 40)), flags=cv2.CASCADE_SCALE_IMAGE)
 		if len(rects) == 0:
 			return []
-		rects[:,2:] += rects[:,:2]
+		#rects[:,2:] += rects[:,:2] # convert from [[x,y,h,b]] to [[x1,y1,x2,y2]]
 		return rects
 
 	def draw_rects(self, img, rects, color):
-		for x1, y1, x2, y2 in rects:
-			cv2.rectangle(img, (x1, y1), (x2, y2), color, 4)
+		for x, y, b, h in rects:
+			cv2.rectangle(img, (x, y), (x+b, y+h), color, 4)
 			
 	def InitCamera(self):
 		print("camera start")
@@ -129,13 +129,13 @@ class CameraStoneDetection():
 
 			#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 			#gray = cv2.equalizeHist(gray)
-			self._rectsBlack = self.detect(image, self._cascadeBlack)
-			self._rectsWhite = self.detect(image, self._cascadeWhite)
+			self.RectsBlack = self.detect(image, self._cascadeBlack)
+			self.RectsWhite = self.detect(image, self._cascadeWhite)
 					
 			if (self._showImage==True):
 				vis = image.copy()
-				self.draw_rects(vis, self._rectsBlack, (0, 0, 0))
-				self.draw_rects(vis, self._rectsWhite, (255, 255, 255))
+				self.draw_rects(vis, self.RectsBlack, (0, 0, 0))
+				self.draw_rects(vis, self.RectsWhite, (255, 255, 255))
 				cv2.imshow(self._windowName, vis)
 				
 			break;

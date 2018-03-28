@@ -41,28 +41,65 @@ from picamera.array import PiRGBArray
 from picamera import PiCamera
 import time
 import cv2
+import numpy as np
 from CameraStoneDetection import CameraStoneDetection
 
 class BoardDetectionCalibration():
 
 	_released					= False
 	_cameraStoneDetection		= None;
+	_averageSize				= 0;
 
 	def __init__(self, cameraStoneDetection):
 		self._cameraStoneDetection = cameraStoneDetection;
 		self.Init();
 
 	def Init(self):
-		print("Init BoardDetectionCalibration")
+		print("Init board detection calibaration")
+		self._cameraStoneDetection.Update(); # warm up camera
+		
+	def Calibrate(self):
+		# need to find 4 black stones in the corners and one white in the center
+		for i in range(0,1):
+			self._cameraStoneDetection.Update();
+			white = self._cameraStoneDetection.RectsWhite
+			black = self._cameraStoneDetection.RectsBlack
+			blackAndWhite = np.concatenate((white, black), 0)
 			
-	def Update(self):
-		self._cameraStoneDetection.Update();
-		return
+			# find average size
+			sizeCount = 0;
+			for x, y, b, h in blackAndWhite:
+				sizeCount += b + h;
+				
+			averageSize = sizeCount / (len(blackAndWhite) * 2);
+			
+			# filter out stones not matching to average size
+			tolerance = 0.25;
+			stones = [];
+			for x, y, b, h in blackAndWhite:
+				factor1 = b / averageSize
+				factor2 = h / averageSize
+				if (factor1 < 1+tolerance and factor1 > 1-tolerance and factor2 < 1+tolerance and factor2 > 1-tolerance):
+					# stone size is in tolerance
+					stones.extend([[x,y,b,h]])
+					
+			if (len(stones)==5):
+				# well done - we have found the 4 black and the 1 white stone
+				self._averageSize = averageSize;
+
+			#print(len(stones))
+				
+			
+			time.sleep(1);
+			
+	#def Update(self):
+	#	
+	#	return
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
-			print ("shutting down camera")
+			print ("shutting down board detection calibaration")
 
 	def __del__(self):
 			self.Release()
@@ -73,5 +110,5 @@ if __name__ == '__main__':
 	boardDetCalib = BoardDetectionCalibration(camera);
 
 	for c in range(0,30):
-		boardDetCalib.Update();
+		boardDetCalib.Calibrate();
 		time.sleep(0.1)

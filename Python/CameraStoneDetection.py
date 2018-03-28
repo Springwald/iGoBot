@@ -60,6 +60,8 @@ class CameraStoneDetection():
 	RectsBlack					= [];
 	RectsWhite					= [];
 	
+	_counter					= 0;
+	
 	_released					= False
 
 	def __init__(self):
@@ -69,7 +71,7 @@ class CameraStoneDetection():
 		self.InitCamera();
 		
 	def detect(self, img, cascade):
-		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 40), int( self.__cameraResolutionY / 40)), flags=cv2.CASCADE_SCALE_IMAGE)
+		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 30), int( self.__cameraResolutionY / 30)), flags=cv2.CASCADE_SCALE_IMAGE)
 		if len(rects) == 0:
 			return []
 		#rects[:,2:] += rects[:,:2] # convert from [[x,y,h,b]] to [[x1,y1,x2,y2]]
@@ -89,10 +91,10 @@ class CameraStoneDetection():
 		# initialize the camera and grab a reference to the raw camera capture
 		self._camera = PiCamera()
 		self._camera.resolution = (self.__cameraResolutionX, self.__cameraResolutionY)
-		self._camera.contrast = 60;
+		self._camera.contrast = 50;
 		self._camera.brightness = 50;
-		self._camera.framerate = 8
-		self._rawCapture = PiRGBArray(self._camera, size=(self._camera.resolution.width, self._camera.resolution.height))
+		self._camera.framerate = 12
+		self._rawCapture = PiRGBArray(self._camera, size=(self.__cameraResolutionX, self.__cameraResolutionY))
 		
 		# allow the camera to warmup
 		time.sleep(0.1)
@@ -108,9 +110,11 @@ class CameraStoneDetection():
 		
 		# capture frames from the camera
 		for frame in self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True):
+		#if (True):
+		#	frame = self._camera.capture(self._rawCapture, format="bgr")
 			# grab the raw NumPy array representing the image - this array
 			# will be 3D, representing the width, height, and # of channels
-			image = frame.array
+			#image = frame.array
 		 
 			key = cv2.waitKey(1) & 0xFF
 		 
@@ -119,7 +123,7 @@ class CameraStoneDetection():
 		 
 			# local modules
 			#from video import create_capture
-			from common import clock, draw_str
+			#from common import clock, draw_str
 			
 			self._camera.capture(self._rawCapture, format="bgr")
 			image = self._rawCapture.array
@@ -132,13 +136,18 @@ class CameraStoneDetection():
 			self.RectsBlack = self.detect(image, self._cascadeBlack)
 			self.RectsWhite = self.detect(image, self._cascadeWhite)
 					
+			self._counter = self._counter+1;
+			#print (self._counter);
+			if (self._counter > 100):
+				self._counter = 0;
+					
 			if (self._showImage==True):
-				vis = image.copy()
-				self.draw_rects(vis, self.RectsBlack, (0, 0, 0))
-				self.draw_rects(vis, self.RectsWhite, (255, 255, 255))
-				cv2.imshow(self._windowName, vis)
+				self.draw_rects(image, self.RectsBlack, (0, 0, 0))
+				self.draw_rects(image, self.RectsWhite, (255, 255, 255))
+				cv2.putText(image, str(self._counter), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
+				cv2.imshow(self._windowName, image)
 				
-			break;
+			#break;
 
 	def Release(self):
 		if (self._released == False):

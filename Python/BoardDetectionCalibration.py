@@ -97,7 +97,7 @@ class BoardDetectionCalibration():
 		if (len(centers)==0):
 			return [];
 		onlyInsideBoard = self.GetOnlyCentersInsideBoard(centers);
-		print (str(len(centers)) + " > "  +str(len(onlyInsideBoard)));
+		#print ("GetBoardKoordinates| all:" + str(len(centers)) + " > inside board:"  +str(len(onlyInsideBoard)));
 		return onlyInsideBoard
 		
 	def ToBoardFields(self, centerPoints):
@@ -106,25 +106,33 @@ class BoardDetectionCalibration():
 			y = 0;
 			if (cX < self._averageCenter[0]): # left side of the board
 				boardHeight = self._calBottomLeft[1] - self._calTopLeft[1];
-				y =  (cY - self._calTopLeft[1]) / boardHeight * self._boardSize;
+				y =  (cY - self._calTopLeft[1]) / boardHeight * (self._boardSize-1);
 			else: # right side of the board
 				boardHeight = self._calBottomRight[1] - self._calTopRight[1];
-				y = (cY - self._calTopRight[1]) / boardHeight * self._boardSize;
+				y = (cY - self._calTopRight[1]) / boardHeight * (self._boardSize-1);
 				
 			x = 0;
 			if (cY < self._averageCenter[1]): # top side of the board
 				boardWidth = self._calTopRight[0] - self._calTopLeft[0];
-				x = (cX - self._calTopLeft[0]) / boardWidth * self._boardSize;
+				x = (cX - self._calTopLeft[0]) / boardWidth * (self._boardSize-1);
 			else: # bottom side of the board
 				boardWidth = self._calBottomRight[0] - self._calBottomLeft[0];
-				x = (cX - self._calBottomLeft[0]) / boardWidth * self._boardSize;
-			#result.extend([[int(x), int(y)]])
-			result.extend([round(x),round(y)])
+				x = (cX - self._calBottomLeft[0]) / boardWidth * (self._boardSize-1);
+			result.extend([[int(round(x)),int(round(y))]])
+			
+		#print (result);
 		return result
 
 	# converts x=1,y=2 to A1
-	def FieldToAZNotation(self,x,y):
-		return chr(65+x),str(y);
+	def FieldToAZNotation(self, x,y):
+		return chr(65+x)+str(y+1);
+		
+	def FieldsToAZNotation(self, fields):
+		result = [];
+		#print (fields);
+		for x, y in fields:
+			result.extend([self.FieldToAZNotation(x,y)])	
+		return result;
 	
 	def GetOnlyCentersInsideBoard(self, centers):
 		resultStones = [];
@@ -275,11 +283,10 @@ if __name__ == '__main__':
 		if (boardDetCalib.IsCalibrated()==True):
 			boardDetCalib.Update();
 			blackCoords = boardDetCalib.BlackStoneCoords;
-			print ("blackCoords");
-			print (blackCoords);
 			blackFields= boardDetCalib.ToBoardFields(blackCoords);
-			print ("blackFields");
-			print (blackFields);
+			#print ("blackFields");
+			blackAZ = boardDetCalib.FieldsToAZNotation(blackFields);
+			print (blackAZ);
 		else:
 			boardDetCalib.Calibrate();
-		time.sleep(0.1)
+		#time.sleep(0.1)

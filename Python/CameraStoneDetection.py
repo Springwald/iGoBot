@@ -51,22 +51,22 @@ class CameraStoneDetection():
 	
 	_cascadeBlack				= None
 	_cascadeWhite				= None
-
+	
 	__cameraResolutionX 		= 640
 	__cameraResolutionY 		= 480
 	
-	posXFace = 0;#-1 # -1=no face, 0=max left, 1=max right
-	posYFace = 0;#-1 # -1=no face, 0=max bottom, 1=max top
-
-	_released						= False
+	_windowName 				= "iGoBot camera";
 	
-	_delay_seconds				= 1
+	_rectsBlack					= [];
+	_rectsWhite					= [];
+	
+	_released					= False
 
 	def __init__(self):
 		print("camera init")
 		self.posXFace = -1
 		self.posYFace = -1
-		
+		self.InitCamera();
 		
 	def detect(self, img, cascade):
 		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 40), int( self.__cameraResolutionY / 40)), flags=cv2.CASCADE_SCALE_IMAGE)
@@ -77,15 +77,14 @@ class CameraStoneDetection():
 
 	def draw_rects(self, img, rects, color):
 		for x1, y1, x2, y2 in rects:
-			#print("detected");
-			cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+			cv2.rectangle(img, (x1, y1), (x2, y2), color, 4)
 			
-			
-	def Update(self):
-		
+	def InitCamera(self):
 		print("camera start")
 		
 		cv2.destroyAllWindows()
+		cv2.namedWindow(self._windowName, cv2.WINDOW_NORMAL)
+		cv2.resizeWindow(self._windowName, 400,300)
 		
 		# initialize the camera and grab a reference to the raw camera capture
 		self._camera = PiCamera()
@@ -102,6 +101,10 @@ class CameraStoneDetection():
 		cascade_white_fn =  "stoneDetection/white-cascade.xml"
 		self._cascadeBlack = cv2.CascadeClassifier(cascade_black_fn)
 		self._cascadeWhite = cv2.CascadeClassifier(cascade_white_fn)
+
+		print("camera start done")
+			
+	def Update(self):
 		
 		# capture frames from the camera
 		for frame in self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True):
@@ -109,17 +112,11 @@ class CameraStoneDetection():
 			# will be 3D, representing the width, height, and # of channels
 			image = frame.array
 		 
-			# show the frame
-			#cv2.imshow("Frame", image)
 			key = cv2.waitKey(1) & 0xFF
 		 
 			## clear the stream in preparation for the next frame
 			self._rawCapture.truncate(0)
 		 
-			## if the `q` key was pressed, break from the loop
-			if key == ord("q"):
-				break
-
 			# local modules
 			#from video import create_capture
 			from common import clock, draw_str
@@ -132,34 +129,32 @@ class CameraStoneDetection():
 
 			#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 			#gray = cv2.equalizeHist(gray)
-			rects = self.detect(image, self._cascadeBlack)
+			self._rectsBlack = self.detect(image, self._cascadeBlack)
+			self._rectsWhite = self.detect(image, self._cascadeWhite)
 					
 			if (self._showImage==True):
 				vis = image.copy()
-				self.draw_rects(vis, rects, (0, 255, 0))
-				cv2.imshow("stone detection", vis)
-
-	def ResetFace(self):
-		self.posXFace = -1
-		self.posYFace = -1
+				self.draw_rects(vis, self._rectsBlack, (0, 0, 0))
+				self.draw_rects(vis, self._rectsWhite, (255, 255, 255))
+				cv2.imshow(self._windowName, vis)
+				
+			break;
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
 			print ("shutting down camera")
-			#super().EndUpdating()
 
 	def __del__(self):
 			self.Release()
 
 if __name__ == '__main__':
-	
+
 	testCamera = CameraStoneDetection();
-	
-	
-	while (True):
+
+	for c in range(0,30):
 		testCamera.Update();
-		if (testCamera.posXFace != -1):
-			print(str(testCamera.posXFace) + " / " + str(testCamera.posYFace))
-			testCamera.ResetFace()
-		time.sleep(0.01)
+		time.sleep(0.1)
+		
+	#while (True):
+	#	time.sleep(1);

@@ -29,6 +29,9 @@
 #     DEALINGS IN THE SOFTWARE.
 
 import os, sys
+from multiprocessing import Process, Manager, Value, Array
+from multiprocessing import Pool, Array, Process
+from threading import Thread
 
 my_file = os.path.abspath(__file__)
 my_path ='/'.join(my_file.split('/')[0:-1])
@@ -48,6 +51,7 @@ class CameraStoneDetection():
 	
 	_camera						= None
 	_rawCapture					= None
+	_stream						= None
 	
 	_cascadeBlack				= None
 	_cascadeWhite				= None
@@ -61,14 +65,21 @@ class CameraStoneDetection():
 	RectsWhite					= [];
 	
 	_counter					= 0;
-	
+
+	_process					= None
+
 	_released					= False
 
 	def __init__(self):
 		print("camera init")
 		self.posXFace = -1
 		self.posYFace = -1
-		self.InitCamera();
+		self.InitCamera()
+		
+		thread = Thread(target=self.Update, args=())
+		thread.nice = -20 # -20 high prio, 20 low prio
+		thread.start()
+		thread.nice = -20
 		
 	def detect(self, img, cascade):
 		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 30), int( self.__cameraResolutionY / 30)), flags=cv2.CASCADE_SCALE_IMAGE)
@@ -95,9 +106,10 @@ class CameraStoneDetection():
 		self._camera.brightness = 50;
 		self._camera.framerate = 12
 		self._rawCapture = PiRGBArray(self._camera, size=(self.__cameraResolutionX, self.__cameraResolutionY))
+		self._stream = self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True)
 		
 		# allow the camera to warmup
-		time.sleep(0.1)
+		time.sleep(0.2)
 		
 		cascade_black_fn =  "stoneDetection/black-cascade.xml"
 		cascade_white_fn =  "stoneDetection/white-cascade.xml"
@@ -105,65 +117,63 @@ class CameraStoneDetection():
 		self._cascadeWhite = cv2.CascadeClassifier(cascade_white_fn)
 
 		print("camera start done")
-			
-	def Update(self):
 		
-		# capture frames from the camera
-		for frame in self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True):
-		#if (True):
-		#	frame = self._camera.capture(self._rawCapture, format="bgr")
-			# grab the raw NumPy array representing the image - this array
-			# will be 3D, representing the width, height, and # of channels
-			#image = frame.array
-		 
-			key = cv2.waitKey(1) & 0xFF
-		 
-			## clear the stream in preparation for the next frame
-			self._rawCapture.truncate(0)
-		 
-			# local modules
-			#from video import create_capture
-			#from common import clock, draw_str
+	def Update(self):
+				
+		#global ftimestamp, getFPS
+		# keep looping infinitely until the thread is stopped
+		#print ("<<<" , self._stream);
+		for f in self._stream:
 			
-			self._camera.capture(self._rawCapture, format="bgr")
-			image = self._rawCapture.array
-					
-			# clear the stream in preparation for the next frame
-			self._rawCapture.truncate(0)
-
-			#gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-			#gray = cv2.equalizeHist(gray)
-			self.RectsBlack = self.detect(image, self._cascadeBlack)
-			self.RectsWhite = self.detect(image, self._cascadeWhite)
-					
 			self._counter = self._counter+1;
-			#print (self._counter);
+			print (self._counter);
 			if (self._counter > 100):
 				self._counter = 0;
-					
+			
+			# grab the frame from the stream and clear the stream in
+			# preparation for the next frame
+			image = f.array
+			#self._actualFrame = image
+			self._rawCapture.truncate(0)
+			
+			self.RectsBlack = self.detect(image, self._cascadeBlack)
+			self.RectsWhite = self.detect(image, self._cascadeWhite)
+
 			if (self._showImage==True):
+				key = cv2.waitKey(1) & 0xFF
 				self.draw_rects(image, self.RectsBlack, (0, 0, 0))
 				self.draw_rects(image, self.RectsWhite, (255, 255, 255))
 				cv2.putText(image, str(self._counter), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
 				cv2.imshow(self._windowName, image)
-				
-			#break;
+
+			# if the thread indicator variable is set, stop the thread
+			# and resource camera resources
+			if (self._released == True):
+				self._stream.close()
+				self._rawCapture.close()
+				self._camera.close()
+				return
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
+			time.sleep(0.5)
 			print ("shutting down camera")
+			self._stream.close()
+			self._rawCapture.close()
+			self._camera.close()
 
 	def __del__(self):
 			self.Release()
 
+import atexit
+		
+def exit_handler():
+	testCamera.Release()
+
 if __name__ == '__main__':
 
 	testCamera = CameraStoneDetection();
+	time.sleep(10)
+	testCamera.Release()
 
-	for c in range(0,30):
-		testCamera.Update();
-		time.sleep(0.1)
-		
-	#while (True):
-	#	time.sleep(1);

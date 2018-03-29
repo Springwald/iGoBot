@@ -76,7 +76,7 @@ class CameraStoneDetection():
 		self.posYFace = -1
 		self.InitCamera()
 		
-		thread = Thread(target=self.Update, args=())
+		thread = Thread(target=self._update, args=())
 		thread.nice = -20 # -20 high prio, 20 low prio
 		thread.start()
 		thread.nice = -20
@@ -118,7 +118,7 @@ class CameraStoneDetection():
 
 		print("camera start done")
 		
-	def Update(self):
+	def _update(self):
 				
 		#global ftimestamp, getFPS
 		# keep looping infinitely until the thread is stopped
@@ -153,6 +153,8 @@ class CameraStoneDetection():
 				self._rawCapture.close()
 				self._camera.close()
 				return
+				
+			time.sleep(0.01) 
 
 	def Release(self):
 		if (self._released == False):
@@ -174,6 +176,6 @@ def exit_handler():
 if __name__ == '__main__':
 
 	testCamera = CameraStoneDetection();
-	time.sleep(10)
+	time.sleep(100)
 	testCamera.Release()
 

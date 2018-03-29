@@ -72,7 +72,7 @@ class BoardDetectionCalibration():
 
 	def Init(self):
 		print("Init board detection calibaration for board size " + str(self._boardSize) + "x" + str(self._boardSize))
-		self._cameraStoneDetection.Update(); # warm up camera
+		#self._cameraStoneDetection.Update(); # warm up camera
 		
 	def Update(self):
 		if (self.IsCalibrated() == False):
@@ -80,8 +80,6 @@ class BoardDetectionCalibration():
 			self.BlackStoneCoords = [];
 			self.WhiteStoneCoords = [];
 			return;
-
-		self._cameraStoneDetection.Update();
 		
 		blackStones = self.FilterToTolerance(self._cameraStoneDetection.RectsBlack, self._averageSize);
 		blackCenters = self.StonesToCenters(blackStones);
@@ -152,10 +150,10 @@ class BoardDetectionCalibration():
 	def Calibrate(self):
 		self.DeleteCalibration();
 		# need to find 4 black stones in the corners and one white in the center
-		self._cameraStoneDetection.Update();
+		#self._cameraStoneDetection.Update();
 		white = self._cameraStoneDetection.RectsWhite
 		black = self._cameraStoneDetection.RectsBlack
-		
+
 		if (len(white) >= 1 and len(black)>=4):
 			blackAndWhite = np.concatenate((white, black), 0)
 			
@@ -279,12 +277,15 @@ if __name__ == '__main__':
 	camera = CameraStoneDetection();
 	boardDetCalib = BoardDetectionCalibration(camera, boardSize=13);
 
+	#time.sleep(4)
+
 	while(True):
 		if (boardDetCalib.IsCalibrated()==True):
 			boardDetCalib.Update();
 			blackCoords = boardDetCalib.BlackStoneCoords;
+			#print (blackCoords);
 			blackFields= boardDetCalib.ToBoardFields(blackCoords);
-			#print ("blackFields");
+			#print (blackFields);
 			blackAZ = boardDetCalib.FieldsToAZNotation(blackFields);
 			print (blackAZ);
 		else:

@@ -43,7 +43,7 @@ class Board():
 	_13x13_xMin						= 735; #735;
 	_13x13_xMax						= 3350;
 	_13x13_yMin						= 100; # 90;
-	_13x13_yMax						= 2840;
+	_13x13_yMax						= 2890;
 	
 	StepperMinX						= 0;
 	StepperMaxX 					= 0;

@@ -84,7 +84,7 @@ class iGoBot:
 	
 	_zPosMaxUp						= 0;
 	_zPosUp							= 400;
-	_zPosOnBoard					= 600;
+	_zPosOnBoard					= 630;
 	
 	def __init__(self, boardSize=13):
 		#pygame.init()
@@ -118,24 +118,29 @@ class iGoBot:
 			time.sleep(30);
 		
 		# test stone board coordinates
+		if (True):
+			for i in [[0,0],[0,12],[12,12],[12,0]]:
+				self.MoveToXY(self._board.GetStepperXPos(i[0]),self._board.GetStepperYPos(i[1]));
+				for a in range(0,3):
+					self.TakeStoneFromBoard();
+					self.PutStoneToBoard();
+					time.sleep(1);
+			
+		# take stone from 0, 0 and drop it into storage
 		if (False):
-			self.MoveToXY(self._board.GetStepperXPos(0),self._board.GetStepperYPos(0));
+			self.MoveToXY(self._board.GetStepperXPos(0), self._board.GetStepperYPos(0));
 			self.TakeStoneFromBoard();
-			self.PutStoneToBoard();
-			time.sleep(30);
+			self.DropStoneInStorage();
 			
 		self.MoveOutOfCameraSight();
 		
+		# calibrate camera with 4 black and 1 white stones
 		self._cameraStoneDetection = BoardDetectionCalibration(self._camera, boardSize);
 		while(self._cameraStoneDetection.IsCalibrated()==False):
 			self._cameraStoneDetection.Calibrate();
-		
 		return;
 		
-		# take stone from 0, 0 and drop it into storage
-		self.MoveToXY(self._board.GetStepperXPos(0), self._board.GetStepperYPos(0));
-		self.TakeStoneFromBoard();
-		self.DropStoneInStorage();
+	
 
 	def TakeStoneFromBoard(self):
 		self.MoveToZ(self._zPosUp);
@@ -215,6 +220,7 @@ class iGoBot:
 			self.MoveOutOfCameraSight();
 		
 			# check camera detection of white stones
+			self.UpdateMotors();
 			self._cameraStoneDetection.Update();
 			whiteStonesCoords = self._cameraStoneDetection.WhiteStoneCoords;
 			whiteStones = self._cameraStoneDetection.ToBoardFields(whiteStonesCoords)
@@ -234,6 +240,7 @@ class iGoBot:
 			else:
 				# no more white stones
 				print("no white stone detected, try ", tries);
+				self.UpdateMotors();
 				time.sleep(1);
 
 	def Release(self):

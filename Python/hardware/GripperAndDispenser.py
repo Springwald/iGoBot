@@ -56,7 +56,7 @@ class GripperAndDispenser():
 	_gripperClosed	= 220
 	
 	_dispenserGive	= 285;
-	_dispenserGrab	= 500;
+	_dispenserGrab	= 530;
 	
 	__last_servo_set_time = 0;
 	
@@ -88,9 +88,9 @@ class GripperAndDispenser():
 		self._values[0] = int(self._gripperOpen);
 		self.setServo(0, int(self._gripperOpen))
 		
-		self._targets[1] = int(self._dispenserGrab);
-		self._values[1] = int(self._dispenserGrab);
-		self.setServo(1, int(self._dispenserGrab))		
+		self._targets[1] = int(self._dispenserGive);
+		self._values[1] = int(self._dispenserGive);
+		self.setServo(1, int(self._dispenserGive))		
 	
 		
 	def Update(self):
@@ -165,8 +165,8 @@ class GripperAndDispenser():
 		
 	def turnOff(self):
 		print("turning off " + self._name)
-		for i in range(0,self._servoCount):
-			self._pwm.set_pwm(i, 0, 0)
+		#for i in range(0,self._servoCount):
+		#	self._pwm.set_pwm(i, 0, 0)
 		#self.power_off()
 
 	def Release(self):
@@ -174,6 +174,7 @@ class GripperAndDispenser():
 			print("releasing " + self._name)
 			#self.home()
 			self.openGripper();
+			self.dispenserGive();
 			while(self.allTargetsReached == False):
 				self.Update();
 			self._released = True

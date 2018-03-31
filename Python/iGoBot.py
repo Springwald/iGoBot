@@ -80,11 +80,17 @@ class iGoBot:
 	# where to move to drop the stone into the drop storage
 	_xPosStoneStorageDrop			= 4400
 	_yPosStoneStorageDrop			= 3800
+	
+	# where to move to grab a new stone from dispenser
+	_xPosStoneStorageGrab			= 4150
+	_yPosStoneStorageGrab			= 3480
+	
 	_yPosOutOfCameraSight			= 3800
 	
 	_zPosMaxUp						= 0;
 	_zPosUp							= 400;
 	_zPosOnBoard					= 630;
+	_zPosOnDispenserGrab			= 700;
 	
 	def __init__(self, boardSize=13):
 		#pygame.init()
@@ -118,7 +124,7 @@ class iGoBot:
 			time.sleep(30);
 		
 		# test stone board coordinates
-		if (True):
+		if (False):
 			for i in [[0,0],[0,12],[12,12],[12,0]]:
 				self.MoveToXY(self._board.GetStepperXPos(i[0]),self._board.GetStepperYPos(i[1]));
 				for a in range(0,3):
@@ -160,6 +166,24 @@ class iGoBot:
 		self.MoveToZ(self._zPosMaxUp);
 		self.MoveToXY(self._xPosStoneStorageDrop, self._yPosStoneStorageDrop);
 		self.OpenGripper();
+		
+	def GrabStoneFromStorage(self):
+		self.MoveToZ(self._zPosMaxUp); # z max up
+		self.MoveToXY(self._xPosStoneStorageGrab, self._yPosStoneStorageGrab); # go to storage grab zone
+		self._gripperAndDispenser.dispenserGrab();
+		for a in range(0,3):
+			# shuffle stone into dispenser hole
+			self._gripperAndDispenser.dispenserGrab();
+			while(self._gripperAndDispenser.allTargetsReached == False):
+				self._gripperAndDispenser.Update();
+				self.UpdateMotors();
+			self._gripperAndDispenser.dispenserGive();
+			while(self._gripperAndDispenser.allTargetsReached == False):
+				self._gripperAndDispenser.Update();
+				self.UpdateMotors();
+		self.MoveToZ(self._zPosOnDispenserGrab);
+		self.CloseGripper();
+		self.MoveToZ(self._zPosMaxUp);
 		
 	def OpenGripper(self):
 		self._gripperAndDispenser.openGripper();
@@ -210,6 +234,12 @@ class iGoBot:
 	def TakeStoneFromPosition(self,x,y):
 		self._MoveToXY(x,y);
 		self.TakeStoneFromBoard();
+		
+	def PutStoneToFieldPos(self, fieldX, fieldY):
+		stepperX = self._board.GetStepperXPos(fieldX);
+		stepperY = self._board.GetStepperYPos(fieldY);
+		self.MoveToXY(stepperX, stepperY);
+		self.PutStoneToBoard();
 		
 	def StoreAllWhiteStones(self):
 		tries = 0;
@@ -289,6 +319,10 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
+	#for i in range(1,6):
+		#bot.GrabStoneFromStorage();
+		#bot.PutStoneToFieldPos(i,i);
+
 	bot.StoreAllWhiteStones();
 	
 	

@@ -1,8 +1,14 @@
 #!/usr/bin/env python
 
-#     ###############################
-#     # iGoBot - a GO playing robot #
-#     ###############################
+#     iGoBot - a GO game playing robot
+#      _ _____      ______       _   
+#     (_)  __ \     | ___ \     | |  
+#      _| |  \/ ___ | |_/ / ___ | |_ 
+#     | | | __ / _ \| ___ \/ _ \| __|
+#     | | |_\ \ (_) | |_/ / (_) | |_ 
+#     |_|\____/\___/\____/ \___/ \__|
+#                              
+#     Project website: http://www.springwald.de/hi/igobot
 #
 #     Licensed under MIT License (MIT)
 #
@@ -36,16 +42,21 @@ import math
 import pygame
 import grovepi
 
+from Board import Board
+from CameraStoneDetection import CameraStoneDetection
+from BoardDetectionCalibration import BoardDetectionCalibration
+
 from hardware.PCF8574 import PCF8574
 from hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 from hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
-from hardware.Gripper import Gripper
+from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
 
 import atexit
 
 class iGoBot:
 
+	
 	I2cIoExpanderPcf8574Adress		= 0x3e
 	_xAxisAdress					= 0x0d
 	_yAxisAdress					= 0x0e
@@ -60,18 +71,22 @@ class iGoBot:
 	_yAxis 							= None;
 	_zAxis 							= None;
 	_light							= None;
-	_gripper 						= None;
+	_gripperAndDispenser			= None;
+	_board							= None
 	
-	_zPosUp							= 600;
-	_zPosOnBoard					= 720;
+	_camera							= None;
+	_cameraStoneDetection			= None;
 	
-	_13x13_xMin						= 735;
-	_13x13_xMax						= 3350;
-	_13x13_yMin						= 90;
-	_13x13_yMax						= 2900;
+	# where to move to drop the stone into the drop storage
+	_xPosStoneStorageDrop			= 4400
+	_yPosStoneStorageDrop			= 3800
+	_yPosOutOfCameraSight			= 3800
 	
-
-	def __init__(self):
+	_zPosMaxUp						= 0;
+	_zPosUp							= 400;
+	_zPosOnBoard					= 600;
+	
+	def __init__(self, boardSize=13):
 		#pygame.init()
 		#pygame.mixer.quit() # to prevent conflicts with speech output (audio device busy)
 		#screenInfo = pygame.display.Info()
@@ -80,42 +95,52 @@ class iGoBot:
 		#else:
 		#	self.lcd = pygame.display.set_mode((800,480), FULLSCREEN, 16)
 		
-		endStop = I2cIoExpanderPcf8574Synchron(0x3e, useAsInputs=True)
-		self._zAxis = StepperMotorControlSynchron("z-axis", self._zAxisAdress, 940,   endStop,  64, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
-		self._xAxis = StepperMotorControlSynchron("x-axis", self._xAxisAdress, 4100,  endStop,  32, [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001])
-		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
-		self.WaitForAllMotors();
-		
-		#return 
-		#self.MoveToXY(self._13x13_xMax,self._13x13_yMax);
-		#self.MoveToZ(self._zPosOnBoard);
-		#ime.sleep(10);
-		
-		self._gripper = Gripper(i2cAdress=self._gripperAdress, busnum=1)
-		self._gripper.openGripper();
-		
 		self._light = Light(self._lightGrovePort);
 		self._light.On();
 		
-		self.MoveToXY(self._13x13_xMin + (self._13x13_xMax - self._13x13_xMin) / 2, self._13x13_yMin + (self._13x13_yMax - self._13x13_yMin) / 2);
-		self.TakeStoneFromBoard();
+		self._camera = CameraStoneDetection();
+		self._board = Board(boardSize);
 		
-		self.MoveToXY(self._13x13_xMin, self._13x13_yMin);
-		self.PutStoneToBoard();
-		self.TakeStoneFromBoard();
+		self._gripperAndDispenser = GripperAndDispenser(i2cAdress=self._gripperAdress, busnum=1)
+		self._gripperAndDispenser.openGripper();
 		
-		self.MoveToXY(self._13x13_xMax, self._13x13_yMax);
-		self.PutStoneToBoard();
-		self.TakeStoneFromBoard();
+		endStop = I2cIoExpanderPcf8574Synchron(0x3e, useAsInputs=True)
+		self._zAxis = StepperMotorControlSynchron("z-axis", self._zAxisAdress, 940,   endStop,  64, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001], rampSafeArea=20)
+		self._xAxis = StepperMotorControlSynchron("x-axis", self._xAxisAdress, 4400,  endStop,  32, [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001])
+		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
+		self.WaitForAllMotors();
 		
-		self.MoveToXY(self._13x13_xMin + (self._13x13_xMax - self._13x13_xMin) / 2, self._13x13_yMin + (self._13x13_yMax - self._13x13_yMin) / 2);
-		self.PutStoneToBoard();
+		self.MoveToZ(self._zPosUp);
+		
+		# move to stone storage drop
+		if (False):
+			self.DropStoneInStorage();
+			time.sleep(30);
+		
+		# test stone board coordinates
+		if (False):
+			self.MoveToXY(self._board.GetStepperXPos(0),self._board.GetStepperYPos(0));
+			self.TakeStoneFromBoard();
+			self.PutStoneToBoard();
+			time.sleep(30);
+			
+		self.MoveOutOfCameraSight();
+		
+		self._cameraStoneDetection = BoardDetectionCalibration(self._camera, boardSize);
+		while(self._cameraStoneDetection.IsCalibrated()==False):
+			self._cameraStoneDetection.Calibrate();
+		
+		return;
+		
+		# take stone from 0, 0 and drop it into storage
+		self.MoveToXY(self._board.GetStepperXPos(0), self._board.GetStepperYPos(0));
+		self.TakeStoneFromBoard();
+		self.DropStoneInStorage();
 
 	def TakeStoneFromBoard(self):
 		self.MoveToZ(self._zPosUp);
 		self.OpenGripper();
 		self.MoveToZ(self._zPosOnBoard);
-		self._gripper.closeGripper();
 		self.CloseGripper();
 		self.MoveToZ(self._zPosUp);
 		return;
@@ -126,16 +151,21 @@ class iGoBot:
 		self.MoveToZ(self._zPosUp);
 		return;
 		
+	def DropStoneInStorage(self):
+		self.MoveToZ(self._zPosMaxUp);
+		self.MoveToXY(self._xPosStoneStorageDrop, self._yPosStoneStorageDrop);
+		self.OpenGripper();
+		
 	def OpenGripper(self):
-		self._gripper.openGripper();
-		while(self._gripper.allTargetsReached == False):
-			self._gripper.Update();
+		self._gripperAndDispenser.openGripper();
+		while(self._gripperAndDispenser.allTargetsReached == False):
+			self._gripperAndDispenser.Update();
 			self.UpdateMotors();
 			
 	def CloseGripper(self):
-		self._gripper.closeGripper();
-		while(self._gripper.allTargetsReached == False):
-			self._gripper.Update();
+		self._gripperAndDispenser.closeGripper();
+		while(self._gripperAndDispenser.allTargetsReached == False):
+			self._gripperAndDispenser.Update();
 			self.UpdateMotors();
 	
 	# To give the motors the chance to go to sleep
@@ -167,17 +197,61 @@ class iGoBot:
 	def MoveToZ(self, pos):
 		self._zAxis.targetPos = pos;
 		self.WaitForAllMotors();
+		
+	def MoveOutOfCameraSight(self):
+		self.MoveToZ(self._zPosMaxUp);
+		self.MoveToY(self._yPosOutOfCameraSight);
+		
+	def TakeStoneFromPosition(self,x,y):
+		self._MoveToXY(x,y);
+		self.TakeStoneFromBoard();
+		
+	def StoreAllWhiteStones(self):
+		tries = 0;
+		while (tries < 5):
+			tries = tries + 1;
+			
+			# move arm out of camera sight
+			self.MoveOutOfCameraSight();
+		
+			# check camera detection of white stones
+			self._cameraStoneDetection.Update();
+			whiteStonesCoords = self._cameraStoneDetection.WhiteStoneCoords;
+			whiteStones = self._cameraStoneDetection.ToBoardFields(whiteStonesCoords)
+			if (len(whiteStones) > 0):
+				# there are still white stones
+				tries = 0;
+				# move to first white stone
+				stone = whiteStones[0];
+				print("found white stone on ", self._cameraStoneDetection.FieldToAZNotation(stone[0],stone[1]));
+				stepperX = self._board.GetStepperXPos(stone[0]);
+				stepperY = self._board.GetStepperYPos(stone[1]);
+				self.MoveToXY(stepperX, stepperY);
+				# take white stone
+				self.TakeStoneFromBoard();
+				# drop stone into storage
+				self.DropStoneInStorage();
+			else:
+				# no more white stones
+				print("no white stone detected, try ", tries);
+				time.sleep(1);
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
 			print ("shutting down iGoBot")
 			
-			if (self._gripper != None):
-				self._gripper.openGripper();
-				while(self._gripper.allTargetsReached == False):
-					self._gripper.Update();
-				self._gripper.Release();
+			if (self._cameraStoneDetection != None):
+				self._cameraStoneDetection.Release();
+				
+			if (self._camera != None):
+				self._camera.Release();
+			
+			if (self._gripperAndDispenser != None):
+				self._gripperAndDispenser.openGripper();
+				while(self._gripperAndDispenser.allTargetsReached == False):
+					self._gripperAndDispenser.Update();
+				self._gripperAndDispenser.Release();
 			
 			if (self._zAxis != None):
 				self.MoveToZ(0);
@@ -208,26 +282,31 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
-	ended = False;
+	bot.StoreAllWhiteStones();
 	
-	while ended == True:
-		
-		time.sleep(1)
-		
-		bot.UpdateMotors();
-		
-		events = pygame.event.get()
 	
-		for event in events:
-			if event.type == pygame.MOUSEBUTTONUP:
-				ended = True 
-			if event.type == pygame.KEYDOWN:
-				if event.key == pygame.K_ESCAPE:
-					ended = True 
-				if event.key == pygame.K_TAB:
-					#roobert.Greet()
-					#start_new_thread(roobert.Greet,())
-					a=0
+	
+	
+	#ended = False;
+	
+	#while ended == True:
+		
+		#time.sleep(1)
+		
+		#bot.UpdateMotors();
+		
+		#events = pygame.event.get()
+	
+		#for event in events:
+			#if event.type == pygame.MOUSEBUTTONUP:
+				#ended = True 
+			#if event.type == pygame.KEYDOWN:
+				#if event.key == pygame.K_ESCAPE:
+					#ended = True 
+				#if event.key == pygame.K_TAB:
+					##roobert.Greet()
+					##start_new_thread(roobert.Greet,())
+					#a=0
 					
 
 

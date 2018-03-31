@@ -72,15 +72,17 @@ class CameraStoneDetection():
 
 	def __init__(self):
 		print("camera init")
+		
 		self.posXFace = -1
 		self.posYFace = -1
 		self.InitCamera()
 		
-		thread = Thread(target=self._update, args=())
-		thread.nice = -20 # -20 high prio, 20 low prio
-		thread.start()
-		thread.nice = -20
-		
+		#thread = Thread(target=self._update, args=())
+		#thread.nice = -20 # -20 high prio, 20 low prio
+		#thread.start()
+		#thread.nice = -20
+
+
 	def detect(self, img, cascade):
 		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 30), int( self.__cameraResolutionY / 30)), flags=cv2.CASCADE_SCALE_IMAGE)
 		if len(rects) == 0:
@@ -95,6 +97,7 @@ class CameraStoneDetection():
 	def InitCamera(self):
 		print("camera start")
 		
+		
 		cv2.destroyAllWindows()
 		cv2.namedWindow(self._windowName, cv2.WINDOW_NORMAL)
 		cv2.resizeWindow(self._windowName, 400,300)
@@ -106,7 +109,7 @@ class CameraStoneDetection():
 		self._camera.brightness = 50;
 		self._camera.framerate = 12
 		self._rawCapture = PiRGBArray(self._camera, size=(self.__cameraResolutionX, self.__cameraResolutionY))
-		self._stream = self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True)
+		#self._stream = self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True)
 		
 		# allow the camera to warmup
 		time.sleep(0.2)
@@ -118,21 +121,25 @@ class CameraStoneDetection():
 
 		print("camera start done")
 		
-	def _update(self):
+	def Update(self):
 				
 		#global ftimestamp, getFPS
 		# keep looping infinitely until the thread is stopped
 		#print ("<<<" , self._stream);
-		for f in self._stream:
+	#	for f in self._stream:
+		if (True):
+			self._camera.capture(self._rawCapture, format="bgr")
+			#image = rawCapture.array
 			
 			self._counter = self._counter+1;
-			print (self._counter);
+			#print (self._counter);
 			if (self._counter > 100):
 				self._counter = 0;
 			
 			# grab the frame from the stream and clear the stream in
 			# preparation for the next frame
-			image = f.array
+			#image = f.array
+			image = self._rawCapture.array
 			#self._actualFrame = image
 			self._rawCapture.truncate(0)
 			
@@ -148,20 +155,21 @@ class CameraStoneDetection():
 
 			# if the thread indicator variable is set, stop the thread
 			# and resource camera resources
-			if (self._released == True):
-				self._stream.close()
-				self._rawCapture.close()
-				self._camera.close()
-				return
+			#if (self._released == True):
+				#self._stream.close()
+				#self._rawCapture.close()
+				#self._camera.close()
+				#return
 				
-			time.sleep(0.01) 
+			#time.sleep(0.01) 
+			#return;
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
 			time.sleep(0.5)
 			print ("shutting down camera")
-			self._stream.close()
+			#self._stream.close()
 			self._rawCapture.close()
 			self._camera.close()
 
@@ -176,6 +184,8 @@ def exit_handler():
 if __name__ == '__main__':
 
 	testCamera = CameraStoneDetection();
-	time.sleep(100)
+	for c in range(0,1000):
+		testCamera.Update();
+		#time.sleep(100)
 	testCamera.Release()
 

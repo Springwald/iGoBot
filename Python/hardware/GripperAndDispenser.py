@@ -45,15 +45,18 @@ import Adafruit_PCA9685
 from SharedInts import SharedInts
 from SharedFloats import SharedFloats
 
-class Gripper():
+class GripperAndDispenser():
 	
 	_pwm		= None
 	_released 	= False
 	
-	_servoCount = 1;
+	_servoCount = 2;
 
 	_gripperOpen	= 340
 	_gripperClosed	= 220
+	
+	_dispenserGive	= 285;
+	_dispenserGrab	= 500;
 	
 	__last_servo_set_time = 0;
 	
@@ -62,10 +65,10 @@ class Gripper():
 	_actualSpeedDelay = 0.01
 	_maxStepsPerSecond = 390
 	
-	_name 		= "gripper"
+	_name 		= "gripperAndDispenser"
 	
-	_targets 					= [0]
-	_values						= [0.0]
+	_targets 					= [0,0]
+	_values						= [0.0,0.0]
 
 	
 	def __init__(self, i2cAdress, busnum):
@@ -83,7 +86,11 @@ class Gripper():
 		# reset servo
 		self._targets[0] = int(self._gripperOpen);
 		self._values[0] = int(self._gripperOpen);
-		self.setServo(0, int(self._gripperOpen))	
+		self.setServo(0, int(self._gripperOpen))
+		
+		self._targets[1] = int(self._dispenserGrab);
+		self._values[1] = int(self._dispenserGrab);
+		self.setServo(1, int(self._dispenserGrab))		
 	
 		
 	def Update(self):
@@ -103,7 +110,7 @@ class Gripper():
 				reachedThis = False
 			if (reachedThis == False):
 				allReached = False
-				newValue = self._values[0] + plus
+				newValue = self._values[i] + plus
 				self._values[i] = newValue;
 				self.setServo(i,newValue)
 				
@@ -125,6 +132,14 @@ class Gripper():
 
 	def closeGripper(self):
 		self._targets[0] = self._gripperClosed;
+		self.allTargetsReached = False
+		
+	def dispenserGive(self):
+		self._targets[1] = self._dispenserGive;
+		self.allTargetsReached = False
+
+	def dispenserGrab(self):
+		self._targets[1] = self._dispenserGrab;
 		self.allTargetsReached = False
 
 	#def waitTillTargetReached(self):
@@ -169,24 +184,35 @@ class Gripper():
 		self.Release()
 		
 def exit_handler():
-	right.Release()
+	tester.Release()
 
 if __name__ == "__main__":
 	
 	#relais = RelaisI2C(I2cIoExpanderPcf8574(address=0x39, useAsInputs=False))
 	
-	right = Gripper(i2cAdress=0x40, busnum=1)
+	tester = GripperAndDispenser(i2cAdress=0x40, busnum=1)
 	
 	atexit.register(exit_handler)
 	
-	time.sleep(2)
+	#time.sleep(2)
 	
-	right.closeGripper();
-	while(right.allTargetsReached == False):
-		right.Update();
+	for i in range(0,5):
+		tester.dispenserGrab();
+		while(tester.allTargetsReached == False):
+			tester.Update();
+		time.sleep(1)
+		
+		tester.dispenserGive();
+		while(tester.allTargetsReached == False):
+			tester.Update();
+		time.sleep(1)
+	
+	tester.closeGripper();
+	while(tester.allTargetsReached == False):
+		tester.Update();
 	time.sleep(1)
 	
-	right.openGripper();
-	while(right.allTargetsReached == False):
-		right.Update();
+	tester.openGripper();
+	while(tester.allTargetsReached == False):
+		tester.Update();
 	time.sleep(1)

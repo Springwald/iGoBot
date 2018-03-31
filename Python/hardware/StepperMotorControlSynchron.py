@@ -66,12 +66,13 @@ class StepperMotorControlSynchron():
 	_releasedMotor					= False
 	_released					= False
 
-	def __init__(self, name, address, maxSteps, i2cIoExpanderPcf8574, i2cIoExpanderPcf8574Bit, stepData):
+	def __init__(self, name, address, maxSteps, i2cIoExpanderPcf8574, i2cIoExpanderPcf8574Bit, stepData, rampSafeArea = 50):
 		self._maxSteps = maxSteps;
 		self._motorName = name;
 		self._i2cIoExpanderPcf8574 = i2cIoExpanderPcf8574;
 		self._endStopBit = i2cIoExpanderPcf8574Bit;
 		self._stepData = stepData;
+		self._rampSafeArea = rampSafeArea;
 		self.actualPos = 0
 		self.targetPos = 0
 		self.actualStepDataPos = 0
@@ -113,11 +114,13 @@ class StepperMotorControlSynchron():
 		if (self.lastStepDataPos != actualStepDataPos): # stepper has to move
 			if (self._motorIsStandBy == True):
 				self._motorIsStandBy = False
+				time.sleep(0.1)
 				self._motor.MotorSpeedSetAB(self._motorPowerOn,self._motorPowerOn)
 			self._motor.MotorDirectionSet(self._stepData[actualStepDataPos])
 			self.lastStepDataPos = actualStepDataPos
 			self.lastStepDataPosChange = time.time()
 			time.sleep(self._actualSpeedDelay);
+			#print(self._actualSpeedDelay);
 		else:
 			if (time.time() > self.lastStepDataPosChange + 3): # stepper has not moved in the last moments
 				if (self._motorIsStandBy == False):

@@ -82,13 +82,14 @@ class iGoBot:
 	_yPosStoneStorageDrop			= 3800
 	
 	# where to move to grab a new stone from dispenser
-	_xPosStoneStorageGrab			= 4150
-	_yPosStoneStorageGrab			= 3480
+	_xPosStoneStorageGrab			= 4160 ##
+	_yPosStoneStorageGrab			= 3470
 	
 	_yPosOutOfCameraSight			= 3800
 	
 	_zPosMaxUp						= 0;
 	_zPosUp							= 400;
+	_zPosDropOnBoard				= 570;
 	_zPosOnBoard					= 630;
 	_zPosOnDispenserGrab			= 700;
 	
@@ -157,7 +158,7 @@ class iGoBot:
 		return;
 		
 	def PutStoneToBoard(self):
-		self.MoveToZ(self._zPosOnBoard);
+		self.MoveToZ(self._zPosDropOnBoard);
 		self.OpenGripper();
 		self.MoveToZ(self._zPosUp);
 		return;
@@ -319,9 +320,9 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
-	#for i in range(1,6):
-		#bot.GrabStoneFromStorage();
-		#bot.PutStoneToFieldPos(i,i);
+	for i in range(1,6):
+		bot.GrabStoneFromStorage();
+		bot.PutStoneToFieldPos(i,i);
 
 	bot.StoreAllWhiteStones();
 	

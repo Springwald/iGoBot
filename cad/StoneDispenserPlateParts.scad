@@ -39,7 +39,7 @@ http://www.springwald.de/hi/igobot
 
 */
 
-function resolutionLow() = ($exportQuality==true) ? 20 : 10;
+function resolutionLow() = ($exportQuality==true) ? 30 : 10;
 function resolutionHi() = ($exportQuality==true) ? 300 : 50;
 
 storageHeight = 50;
@@ -113,6 +113,86 @@ module Storage3() {
     }
 }
 
+module PlateRaw(height){
+    difference() 
+    {
+        union()
+        {
+            for (i = [-45:45]) {
+                rotate([0,0,i]) {
+                    translate([0,-plateWidth/2,-plateHeight/2]) cylinder(h=height, r=plateWidth/2, $fn=resolutionHi(), center=true); 
+                }
+            }
+        }
+        union() {
+           rotate([0,0,45]) {
+            translate([0,-plateWidth/2,-4.9])  GoStone();
+           }
+        }
+    }
+}
+
+module PlateStoneBumper() {
+    height = 0.5;
+    bumperHeight = 2;
+    
+    
+    difference()  {
+        
+        union() {
+        
+            translate([0,0,-0.5]) PlateRaw(height);
+            
+            // ring
+            difference() {
+                rotate([0,0,45]) 
+                    translate([0,-plateWidth/2,-15-bumperHeight]) 
+                        rotate_extrude(convexity = 10,  $fn=resolutionLow())
+                            translate([20, 10, 0])
+                                circle(r = bumperHeight,  $fn=resolutionLow());
+                translate([0,-plateWidth/3,0]) 
+                    rotate([0,0,45/2]) 
+                        cube([30,100,30], center=true);
+            }
+            
+            //line1+2
+            translate([0,-plateWidth/2-1,-5-bumperHeight]) 
+                rotate([0,0,45/2]) {
+                    translate([1,25,0])
+                        rotate([90,0,70]) 
+                            cylinder(h=40, r=bumperHeight, $fn=resolutionLow(), center=true); 
+                    translate([0,-17,0])
+                        rotate([90,0,90]) 
+                            cylinder(h=40, r=bumperHeight, $fn=resolutionLow(), center=true); 
+                }
+           
+            // line 3
+            translate([4,-12,-5-bumperHeight]) 
+                translate([0,-20,0])
+                    rotate([90,0,20]) 
+                        cylinder(h=40, r=bumperHeight, $fn=resolutionLow(), center=true); 
+            
+            //line4+5
+            translate([42,-18,-5-bumperHeight]) 
+                rotate([0,0,45/2]) {
+                    translate([1,20,0])
+                        rotate([90,0,120]) 
+                            cylinder(h=13, r=bumperHeight, $fn=resolutionLow(), center=true); 
+                    translate([0,-20,0])
+                        rotate([90,0,60]) 
+                            cylinder(h=13, r=bumperHeight, $fn=resolutionLow(), center=true); 
+                }
+                
+            // line 6
+            translate([-20,-12,-5-bumperHeight]) 
+                translate([0,-20,0])
+                    rotate([90,0,0]) 
+                        cylinder(h=40, r=bumperHeight, $fn=resolutionLow(), center=true); 
+        }
+        translate([0,0,-16.75]) cube([400,400,20],center=true);
+    }
+}
+
 module Plate(rotation) {
     
     // The servo holder
@@ -129,22 +209,7 @@ module Plate(rotation) {
     }
 
     // The plate
-    difference() 
-    {
-        union()
-        {
-            for (i = [-45:45]) {
-                rotate([0,0,i]) {
-                    translate([0,-plateWidth/2,-plateHeight/2]) cylinder(h=plateHeight, r=plateWidth/2, $fn=resolutionHi(), center=true); 
-                }
-            }
-        }
-        union() {
-           rotate([0,0,45]) {
-            translate([0,-plateWidth/2,-4.9])  GoStone();
-           }
-        }
-    }
+    PlateRaw(plateHeight);
 
     
 }
@@ -154,14 +219,16 @@ module Plate(rotation) {
 //$exportQuality = false;
 color([0,1,0]) cylinder(h=200, r=1, $fn=resolutionLow(), center=true); 
 
-translate([0,0,1]) Storage3(); 
+//translate([0,0,1]) Storage3(); 
 
 
 translate([0,plateWidth/2,0]) {
     rotate([0,0,0]) {
-        Plate();
+        //Plate();
     }
 }
+
+PlateStoneBumper();
 
 
 

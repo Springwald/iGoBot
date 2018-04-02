@@ -36,77 +36,32 @@ import pygame
 from pygame.locals import *
 
 sys.path.insert(0, os.path.abspath("libs"))
-from MultiProcessing import MultiProcessing
 
-class SpeechOutput(MultiProcessing):
+class SpeechOutput():
 
-	__keySentencesToSpeak		= MultiProcessing.get_next_key()
-	__keySpeaking				= MultiProcessing.get_next_key()
 	_released					= False;
-	
-	## multi process properties START ##
-	
-	@property
-	def sentencesToSpeak(self):
-		return self.GetSharedValue(self.__keySentencesToSpeak)
-	@sentencesToSpeak.setter
-	def sentencesToSpeak(self, value):
-		self.SetSharedValue(self.__keySentencesToSpeak, value)
-		
-	@property
-	def speaking(self):
-		return self.GetSharedValue(self.__keySpeaking)
-	@speaking.setter
-	def speaking(self, value):
-		self.SetSharedValue(self.__keySpeaking, value)
-	
-	## multi process properties END ##
 
 	def __init__(self):
 		print("speech init")
-		super().__init__()
-		self.sentencesToSpeak = [] # which sentences are actually speaking
-		self.speaking = False 
-		super().StartUpdating()
 
-	def Update(self):
-		if (self._released == True):
-			return;
-		sentences = self.sentencesToSpeak
-		#print (len(sentences))
-		if (len(sentences) > 0):
-			nextSentence = sentences[0]
-			del sentences[0]
-			self.sentencesToSpeak = sentences
-			self.speaking = True
-			self.__speak(nextSentence, True)
-		else:
-			self.speaking = False
-			time.sleep(1)
-
-	def Speak(self, content):
-		self.speaking = True
-		sentences = self.sentencesToSpeak
-		sentences.append(content)
-		self.sentencesToSpeak = sentences
-
-	def __speak(self, content, wait):
-
+	def Speak(self, content, wait=False):
 		#espeak_process = subprocess.Popen(["espeak", "-vde", "-s130", content, "--stdout"], stdout=subprocess.PIPE) # robotic speech
-		espeak_process = subprocess.Popen(["espeak", "-vmb-de6", "-s130", content, "--stdout"], stdout=subprocess.PIPE) # more human speech
+		espeak_process = subprocess.Popen(["espeak", "-vmb-de2", "-s140", content, "--stdout"], stdout=subprocess.PIPE) # more human speech
 
 		if (wait==True):
-			 aplay_process = subprocess.call(["aplay", "-D","plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE) # soundcard 1
+			aplay_process = subprocess.call(["aplay", "-D","plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE) # soundcard 1
 			#aplay_process = subprocess.call(["aplay", "-D","plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE) # default soundcard
 			#aplay_process = subprocess.call(["aplay"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
 		else:
-			aplay_process = subprocess.Popen(["aplay", "-D", "sysdefault"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
+			#aplay_process = subprocess.Popen(["aplay", "-D", "sysdefault"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
+			aplay_process = subprocess.Popen(["aplay", "-D", "plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
+			
 			
 	def Release(self):
 		if (self._released == False):
 			self._released = True;
 			print("speech releasing")
-			super().EndUpdating()
+
 			
 	def __del__(self):
 		self.Release()
@@ -118,12 +73,6 @@ import atexit
 
 if __name__ == "__main__":
 	
-	
-	#espeak_process = subprocess.Popen(["espeak", "-vde", "-s100", "Hallo", "--stdout"], stdout=subprocess.PIPE)
-	#aplay_process = subprocess.call(["aplay", "-D", "sysdefault"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
-	
-	#espeak_process = subprocess.Popen(["espeak", "-vde", "-s100", "Guten Tag", "--stdout"], stdout=subprocess.PIPE)
-	#aplay_process = subprocess.call(["aplay", "-D", "sysdefault"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
 		
 	pygame.init()
 	
@@ -131,15 +80,11 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
-	speechOut.Speak("Hallo")
-	while (speechOut.speaking==True):
-			time.sleep(1)
-	speechOut.Speak("Möchtest Du eine Partie GO mit mir spielen?");
-	while (speechOut.speaking==True):
-			time.sleep(1)
-	speechOut.Speak("Ich habe eine Spielstärke von etwa 5 kyu.")
-	while (speechOut.speaking==True):
-			time.sleep(1)
+	speechOut.Speak("Hallo", wait=False)
+	time.sleep(3);
+	speechOut.Speak("Möchtest Du eine Partie go mit mir spielen?", wait=True);
+	speechOut.Speak("Ich habe eine Spielstärke von etwa 5 kyu.", wait=True)
+
 	#speechOut.Speak("Hui")
 	time.sleep(0.5);
 	

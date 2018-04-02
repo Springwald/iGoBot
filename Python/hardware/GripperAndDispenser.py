@@ -125,7 +125,7 @@ class GripperAndDispenser():
 		
 		if (self.__last_servo_set_time + 5 < time.time()):
 			# long time nothing done
-			time.sleep(0.5);
+			#time.sleep(0.5);
 			self.PowerOff();
 		
 		#print("update end")

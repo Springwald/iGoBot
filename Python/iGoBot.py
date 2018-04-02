@@ -45,12 +45,14 @@ import grovepi
 from Board import Board
 from CameraStoneDetection import CameraStoneDetection
 from BoardDetectionCalibration import BoardDetectionCalibration
+from SpeechOutput import SpeechOutput
 
 from hardware.PCF8574 import PCF8574
 from hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 from hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
 from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
+from hardware.RgbLeds import RgbLeds
 
 import atexit
 
@@ -71,8 +73,11 @@ class iGoBot:
 	_yAxis 							= None;
 	_zAxis 							= None;
 	_light							= None;
+	_leds							= None;
 	_gripperAndDispenser			= None;
-	_board							= None
+	_speech							= None;
+	_board							= None;
+	_switches 						= None;
 	
 	_camera							= None;
 	_cameraStoneDetection			= None;
@@ -105,6 +110,10 @@ class iGoBot:
 		self._light = Light(self._lightGrovePort);
 		self._light.On();
 		
+		self._leds = RgbLeds();
+		
+		self._speech = SpeechOutput();
+		
 		self._camera = CameraStoneDetection();
 		self._board = Board(boardSize);
 		
@@ -112,6 +121,7 @@ class iGoBot:
 		self._gripperAndDispenser.openGripper();
 		
 		endStop = I2cIoExpanderPcf8574Synchron(0x3e, useAsInputs=True)
+		self._switches = endStop;
 		self._zAxis = StepperMotorControlSynchron("z-axis", self._zAxisAdress, 940,   endStop,  64, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001], rampSafeArea=20)
 		self._xAxis = StepperMotorControlSynchron("x-axis", self._xAxisAdress, 4400,  endStop,  32, [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001])
 		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
@@ -205,6 +215,8 @@ class iGoBot:
 		self._zAxis.Update();
 		
 	def WaitForAllMotors(self):
+		while(self._gripperAndDispenser.allTargetsReached==False):
+			self._gripperAndDispenser.Update();
 		while(self._zAxis.targetReached==False):
 			self.UpdateMotors();
 		while(self._xAxis.targetReached==False):
@@ -242,6 +254,9 @@ class iGoBot:
 		self.MoveToXY(stepperX, stepperY);
 		self.PutStoneToBoard();
 		
+	def Speak(self, sentence, wait=False):
+		bot._speech.Speak(sentence, wait);
+
 	def StoreAllWhiteStones(self):
 		tries = 0;
 		while (tries < 5):
@@ -273,6 +288,20 @@ class iGoBot:
 				print("no white stone detected, try ", tries);
 				self.UpdateMotors();
 				time.sleep(1);
+			
+	def WaitTillButtonPressed(self, color="green"):
+		pressed = False;
+		while(pressed == False):
+			self.UpdateMotors();
+			self._gripperAndDispenser.Update();
+			self._leds.AnimateButtonGreen();
+			if (self._switches.getBit(bit=16)):
+				pressed = True;
+		self._leds.clearButton();
+
+	def PlayWhiteGame(self):
+		self.Speak("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste.", wait=False);
+		self.WaitTillButtonPressed(color="green");
 
 	def Release(self):
 		if (self._released == False):
@@ -305,6 +334,13 @@ class iGoBot:
 				
 			if (self._light != None):
 				self._light.Off();
+				self._light.Release();
+				
+			if (self._leds != None):
+				self._leds.Release();
+				
+			if (self._speech != None):
+				self._speech.Release();
 
 			self._ended = True
 
@@ -320,11 +356,24 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
-	for i in range(1,6):
-		bot.GrabStoneFromStorage();
-		bot.PutStoneToFieldPos(i,i);
+	bot.PlayWhiteGame();
+	
+	if (False):
+		bot._speech.Speak("Hallo")
+		while (bot._speech.speaking==True):
+				time.sleep(1)
+		bot._speech.Speak("Möchtest Du eine Partie go mit mir spielen?");
+		while (bot._speech.speaking==True):
+				time.sleep(1)
+		bot._speech.Speak("Ich habe eine Spielstärke von etwa 5 kyu.")
+		while (bot._speech.speaking==True):
+				time.sleep(1)
+		
+		for i in range(1,6):
+			bot.GrabStoneFromStorage();
+			bot.PutStoneToFieldPos(i,i);
 
-	bot.StoreAllWhiteStones();
+		bot.StoreAllWhiteStones();
 	
 	
 	

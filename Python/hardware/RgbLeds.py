@@ -28,85 +28,79 @@
 #     DEALINGS IN THE SOFTWARE.
 
 
+#!/usr/bin/python
+# mcroboface.py
+
 import time
-import os, sys
 from neopixel import *
 
-my_file = os.path.abspath(__file__)
-my_path ='/'.join(my_file.split('/')[0:-1])
-
-sys.path.insert(0,my_path + "/../libs" )
-
-from MultiProcessing import MultiProcessing
-
-class RgbLeds(MultiProcessing):
+class RgbLeds():
 
 	# LED strip configuration:
-	LED_COUNT      = 17+12   # Number of LED pixels.
-	LED_PIN        = 18      # GPIO pin connected to the pixels (must support PWM!).
-	LED_FREQ_HZ    = 800000  # LED signal frequency in hertz (usually 800khz)
-	LED_DMA        = 5       # DMA channel to use for generating signal (try 5)
-	LED_BRIGHTNESS = 64    # Set to 0 for darkest and 255 for brightest
-	LED_INVERT     = False   # True to invert the signal (when using NPN transistor level shift)
+	Start_LED_FACE		= 0		 # LEDs before the McRoboFace
+	LED_COUNT_FACE		= 17
+	Start_LED_BUTTON	= LED_COUNT_FACE	 # LEDs before the Button
+	LED_COUNT_BUTTON	= 12
+	LED_COUNT      		= LED_COUNT_FACE+LED_COUNT_BUTTON   # Number of LED pixels.
+	LED_PIN        		= 18		# GPIO pin connected to the pixels (must support PWM!).
+	LED_FREQ_HZ    		= 800000	# LED signal frequency in hertz (usually 800khz)
+	LED_DMA        		= 5			# DMA channel to use for generating signal (try 5)
+	LED_BRIGHTNESS 		= 64		# Set to 0 for darkest and 255 for brightest
+	LED_INVERT     		= False		# True to invert the signal (when using NPN transistor level shift)
 	
-	_strip 			= None
-	_program_path 	= None
-	_released		= False
-	_dimmer			 = 1
-	
-	_hearthPic		= None
-	
-	_pulse_phase	= 1
-	_pulse_step		= 0
-	
-	_power_management 	= None
+	_pixels				= None;
+	_released			= False
 
-	def __init__(self):
-		
+	# Define various facial expressions
+	smileData   = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1]
+	frownData   = [1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]
+	grimaceData = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
+	oooohData   = [0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1]
 	
-		super().__init__(prio=20)
-		
-		# Create NeoPixel object with appropriate configuration.
-		self._strip = Adafruit_NeoPixel(self.LED_COUNT, self.LED_PIN, self.LED_FREQ_HZ, self.LED_DMA, self.LED_INVERT, self.LED_BRIGHTNESS)
-		# Intialize the library (must be called once before other functions).
-		self._strip.begin()
-		
-		super().StartUpdating()
-		
-	def colorWipe(self, color, wait_ms=0.1):
-		#Wipe color across display a pixel at a time.
-		for i in range(self._strip.numPixels()):
-			self._strip.setPixelColor(i , color)
-			self._strip.show()
-			time.sleep(wait_ms/1000.0)
+	def __init__(self):
+		# Initialis the McRoboFace controllers
+		self._pixels = Adafruit_NeoPixel(self.LED_COUNT, self.LED_PIN, self.LED_FREQ_HZ, self.LED_DMA, self.LED_INVERT, self.LED_BRIGHTNESS)
+		self._pixels.begin()
+
+	def clearFace(self):
+		for i in range(0, self.Start_LED_FACE + self.LED_COUNT_FACE):
+			self._pixels.setPixelColor(i, 0)
+			self._pixels.show()   
 			
-	def speed(self):
-		col = Color (0,0,0)
-		for m in range(0, 25):
-			for i in range(self._strip.numPixels()):
-				self._strip.setPixelColor(i, col)
-			self._strip.show()
-		col = Color (200,200,255)
-		for m in range(0, 1):
-			for i in range(self._strip.numPixels()):
-				self._strip.setPixelColor(i, col)
-			self._strip.show()
-		
-			
-	def theaterChase(self, color, wait_ms=50, iterations=10):
-		"""Movie theater light style chaser animation."""
-		strip = self._strip
+	def clearButton(self):
+		for i in range(0, self.Start_LED_BUTTON + self.LED_COUNT_BUTTON):
+			self._pixels.setPixelColor(i, 0)
+			self._pixels.show()                                       
+
+	def showFace (self, data, Red, Green, Blue):
+		for i in range(0, len(data)):
+			if (data[i] > 0):
+				self._pixels.setPixelColor(self.Start_LED_FACE+i, Color(Green, Red, Blue))
+			else:
+				self._pixels.setPixelColor(self.Start_LED_FACE+i, 0)
+		self._pixels.show()           
+
+	def theaterChase(self, color, wait_ms=50, iterations=1):
+	#Movie theater light style chaser animation."""
 		for j in range(iterations):
 			for q in range(3):
-				for i in range(0, strip.numPixels(), 3):
-					strip.setPixelColor(i+q, color)
-				strip.show()
+				for i in range(0, self.LED_COUNT_BUTTON, 3):
+					self._pixels.setPixelColor(self.Start_LED_BUTTON+i+q, color)
+				self._pixels.show()
 				time.sleep(wait_ms/1000.0)
-				for i in range(0, strip.numPixels(), 3):
-					strip.setPixelColor(i+q, 0)
-	
+				for i in range(0, self.LED_COUNT_BUTTON, 3):
+					self._pixels.setPixelColor(self.Start_LED_BUTTON+i+q, 0)
+					
+	def colorWipe(self, color, wait_ms=0.1):
+		#Wipe color across display a pixel at a time.
+		for i in range(self.LED_COUNT_BUTTON):
+			self._pixels.setPixelColor(self.Start_LED_BUTTON+i , color)
+			self._pixels.show()
+			time.sleep(wait_ms/1000.0)
+			
+
 	def wheel(self,pos):
-		"""Generate rainbow colors across 0-255 positions."""
+		#Generate rainbow colors across 0-255 positions."""
 		if pos < 85:
 			return Color(pos * 3, 255 - pos * 3, 0)
 		elif pos < 170:
@@ -115,86 +109,64 @@ class RgbLeds(MultiProcessing):
 		else:
 			pos -= 170
 			return Color(0, pos * 3, 255 - pos * 3)
-					
-	def rainbowCycle(self, wait_ms=20, iterations=5):
+			
+	def rainbowCycle(self, wait_ms=10, iterations=1):
 		"""Draw rainbow that uniformly distributes itself across all pixels."""
-		strip = self._strip
+		strip = self._pixels
 		for j in range(256*iterations):
-			for i in range(strip.numPixels()):
-				strip.setPixelColor(i, self.wheel(((int(i * 256 / strip.numPixels()) + j) & 255)))
+			for i in range(self.LED_COUNT_BUTTON):
+				strip.setPixelColor(self.Start_LED_BUTTON+i, self.wheel(((int(i * 256 / strip.numPixels()) + j) & 255)))
 			strip.show()
 			time.sleep(wait_ms/1000.0)
-					
-					
-	def Off(self):
-		for number in range(self.LED_COUNT):
-			self._strip.setPixelColor(number, 0) 
-			self._strip.show()
-							
-	def Update(self):
-		
-		if (super().updating_ended == True):
-			return
-			
-			
-		steps = 15
-		delay = 0.1
-		
-		self._pulse_step = self._pulse_step + self._pulse_phase
-		if (self._pulse_step > steps or self._pulse_step < 1):
-			self._pulse_phase = - self._pulse_phase
 
-		self._dimmer = 0.5/ steps * self._pulse_step
-		time.sleep(delay)
-		
-		#self.rainbowCycle(wait_ms=10, iterations=5)
-		
-		speed = 100
-		r = abs((time.time()* speed % 512)-255) / 2
-		g = 0
-		b = 0
-		
-		self.colorWipe(Color(255,0, 0))  # Red wipe
-		#self.theaterChase(self._strip, Color(127, 127, 127))  # White theater chase
-		#time.sleep(2)
-		
+	def AnimateButtonGreen(self):
+		#self.rainbowCycle();
+		#self.colorWipe(Color(127,0,0));
+		self.theaterChase(Color(127,0,0));
+		#time.sleep(0.01);
+
+	def McRoboFaceDemo(self):
+		try:
+			self.clearFace()
+			self.showFace (self.smileData, 255, 0 , 0)
+			time.sleep(2)
+			self.showFace (self.frownData, 0, 0, 255)
+			time.sleep(2)
+			self.showFace (self.grimaceData, 255, 0, 255)
+			time.sleep(2)
+			self.showFace (self.oooohData, 0, 255, 0)
+			time.sleep(2)
+		except KeyboardInterrupt:
+			print
+		finally:
+			self.clearFace()
+
 	def Release(self):
 		if (self._released == False):
 			self._released = True
 			print("RGB LEDs releasing")
-			super().EndUpdating()
-			self.Off()
+			self.clearFace();
+			self.clearButton();
 
 	def __del__(self):
-		self.Release()
+		self.Release()    
 
 if __name__ == "__main__":
 
+	leds = RgbLeds();
 
+	for i in range(1,20):
+		leds.AnimateButtonGreen();
+	
+	leds.McRoboFaceDemo();
 
-	leds = RgbLeds() 
-	
-	print("2")
-	
-	ended = False
-	
-	print("3")
-
-	#for a in range(10):
-	time.sleep(10)
-	
-	#while ended == False:
-	#	time.sleep(1)
-		#print("hu")
-	#	a=1
-		#leds.speed()
-		#leds.Update()
-		#leds.colorWipe(Color(0,0,255),10)
-		#leds.theaterChase(Color(0,0,255),50)
-		#leds.rainbowCycle(wait_ms=10, iterations=5)
-		
-	#time.sleep(13)
-		
 	leds.Release()
+
+
+
+
+
+
+
 
 

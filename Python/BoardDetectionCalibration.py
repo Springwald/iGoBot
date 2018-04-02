@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-
+#     iGoBot - a GO game playing robot
+#
 #     ##############################
 #     # GO stone board calibration #
 #     ##############################
+#
+#     Project website: http://www.springwald.de/hi/igobot
 #
 #     Licensed under MIT License (MIT)
 #
@@ -72,9 +75,10 @@ class BoardDetectionCalibration():
 
 	def Init(self):
 		print("Init board detection calibaration for board size " + str(self._boardSize) + "x" + str(self._boardSize))
-		#self._cameraStoneDetection.Update(); # warm up camera
+		self._cameraStoneDetection.Update(); # warm up camera
 		
 	def Update(self):
+		self._cameraStoneDetection.Update();
 		if (self.IsCalibrated() == False):
 			print("BoardDetectionCalibration.Update: not calibrated yet");
 			self.BlackStoneCoords = [];
@@ -150,7 +154,7 @@ class BoardDetectionCalibration():
 	def Calibrate(self):
 		self.DeleteCalibration();
 		# need to find 4 black stones in the corners and one white in the center
-		#self._cameraStoneDetection.Update();
+		self._cameraStoneDetection.Update();
 		white = self._cameraStoneDetection.RectsWhite
 		black = self._cameraStoneDetection.RectsBlack
 

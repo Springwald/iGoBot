@@ -45,7 +45,11 @@ import Adafruit_PCA9685
 from SharedInts import SharedInts
 from SharedFloats import SharedFloats
 
+import grovepi
+
 class GripperAndDispenser():
+	
+	_groveRelaisPort = 7;
 	
 	_pwm		= None
 	_released 	= False
@@ -118,28 +122,32 @@ class GripperAndDispenser():
 
 		if (allReached == False):
 			time.sleep(self._actualSpeedDelay)
-			
+		
 		if (self.__last_servo_set_time + 5 < time.time()):
 			# long time nothing done
-			#self.power_off()
-			time.sleep(0.5)
+			time.sleep(0.5);
+			self.PowerOff();
 		
 		#print("update end")
 
 	def openGripper(self):
 		self._targets[0] = self._gripperOpen;
+		self.PowerOn();
 		self.allTargetsReached = False
 
 	def closeGripper(self):
 		self._targets[0] = self._gripperClosed;
+		self.PowerOn();
 		self.allTargetsReached = False
 		
 	def dispenserGive(self):
 		self._targets[1] = self._dispenserGive;
+		self.PowerOn();
 		self.allTargetsReached = False
 
 	def dispenserGrab(self):
 		self._targets[1] = self._dispenserGrab;
+		self.PowerOn();
 		self.allTargetsReached = False
 
 	#def waitTillTargetReached(self):
@@ -163,8 +171,15 @@ class GripperAndDispenser():
 		self.allTargetsReached = False
 		time.sleep(1)
 		
+	def PowerOn(self):
+		grovepi.digitalWrite(self._groveRelaisPort,1)
+		
+	def PowerOff(self):
+		grovepi.digitalWrite(self._groveRelaisPort,0)
+		
 	def turnOff(self):
 		print("turning off " + self._name)
+		self.PowerOff();
 		#for i in range(0,self._servoCount):
 		#	self._pwm.set_pwm(i, 0, 0)
 		#self.power_off()

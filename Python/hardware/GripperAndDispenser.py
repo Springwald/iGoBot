@@ -84,6 +84,10 @@ class GripperAndDispenser():
 		# Alternatively specify a different address and/or bus:
 		self._pwm = Adafruit_PCA9685.PCA9685(address=i2cAdress, busnum=busnum)
 		
+		grovepi.pinMode(self._groveRelaisPort, "OUTPUT")
+		
+		self.PowerOn();
+		
 		# Set frequency to 60hz, good for servos.
 		self._pwm.set_pwm_freq(60)
 		
@@ -121,7 +125,8 @@ class GripperAndDispenser():
 		self.allTargetsReached = allReached
 
 		if (allReached == False):
-			time.sleep(self._actualSpeedDelay)
+			#self.PowerOff();
+			time.sleep(self._actualSpeedDelay);
 		
 		if (self.__last_servo_set_time + 5 < time.time()):
 			# long time nothing done
@@ -150,11 +155,6 @@ class GripperAndDispenser():
 		self.PowerOn();
 		self.allTargetsReached = False
 
-	#def waitTillTargetReached(self):
-	#	while (self.allTargetsReached == False):
-	#		self.Update();
-	#		time.sleep(self._actualSpeedDelay)
-			
 	def setServo(self, port, value):
 		self._pwm.set_pwm(port, 0, int(value))
 		self.__last_servo_set_time = time.time()
@@ -175,15 +175,11 @@ class GripperAndDispenser():
 		grovepi.digitalWrite(self._groveRelaisPort,1)
 		
 	def PowerOff(self):
-		return;
 		grovepi.digitalWrite(self._groveRelaisPort,0)
 		
 	def turnOff(self):
 		print("turning off " + self._name)
 		self.PowerOff();
-		#for i in range(0,self._servoCount):
-		#	self._pwm.set_pwm(i, 0, 0)
-		#self.power_off()
 
 	def Release(self):
 		if (self._released == False):
@@ -208,12 +204,13 @@ if __name__ == "__main__":
 	#relais = RelaisI2C(I2cIoExpanderPcf8574(address=0x39, useAsInputs=False))
 	
 	tester = GripperAndDispenser(i2cAdress=0x40, busnum=1)
-	
+
 	atexit.register(exit_handler)
 	
 	#time.sleep(2)
 	
 	for i in range(0,5):
+		print(i)
 		tester.dispenserGrab();
 		while(tester.allTargetsReached == False):
 			tester.Update();

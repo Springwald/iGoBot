@@ -175,6 +175,7 @@ class GripperAndDispenser():
 		grovepi.digitalWrite(self._groveRelaisPort,1)
 		
 	def PowerOff(self):
+		return;
 		grovepi.digitalWrite(self._groveRelaisPort,0)
 		
 	def turnOff(self):

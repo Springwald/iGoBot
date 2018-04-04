@@ -47,6 +47,7 @@ class GnuGoRemote():
 		cmd = "/usr/games/gnugo"
 		self._gnuGoInstance = Popen([cmd , "--mode", "gtp"], stdout=PIPE, stdin=PIPE);
 		print(self.SendGnuGoCommand("boardsize " + str(boardSize)));
+		print(self.SendGnuGoCommand("clear_board"));
 
 	def SendGnuGoCommand(self, command):
 		debug = False
@@ -70,6 +71,19 @@ class GnuGoRemote():
 		else:
 			return '';
 			
+	def PlayerPlayWhite(self, fieldAz):
+		print("gnuGo: Players put white on ", fieldAz);
+		return self.SendGnuGoCommand('play white ' + fieldAz)
+		
+	def PlayerPlayBlack(self, fieldAz):
+		print("gnuGo: Players put black on ", fieldAz);
+		return self.SendGnuGoCommand('play black ' + fieldAz)
+			
+	def AiPlayWhite(self):
+		stone = self.SendGnuGoCommand('genmove white')
+		print("gnuGo: AI put white on ", stone);
+		return stone;
+			
 	def Release(self):
 		if (self._released == False):
 			self._released = True;
@@ -88,6 +102,7 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
+	print(gnuGo.SendGnuGoCommand('genmove white'));
 	print(gnuGo.SendGnuGoCommand('genmove white'));
 	print(gnuGo.SendGnuGoCommand('genmove black'));
 	print(gnuGo.SendGnuGoCommand('genmove white'));

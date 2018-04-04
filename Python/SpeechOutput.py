@@ -45,6 +45,7 @@ class SpeechOutput():
 		print("speech init")
 
 	def Speak(self, content, wait=False):
+		print("SPEAK: ", content);
 		#espeak_process = subprocess.Popen(["espeak", "-vde", "-s130", content, "--stdout"], stdout=subprocess.PIPE) # robotic speech
 		espeak_process = subprocess.Popen(["espeak", "-vmb-de2", "-s140", content, "--stdout"], stdout=subprocess.PIPE) # more human speech
 

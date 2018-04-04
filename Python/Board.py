@@ -36,6 +36,10 @@ class Board():
 
 	_released					= False
 	
+	Empty						= 0;
+	Black						= 1;
+	White						= 2;
+	
 	_boardSize					= 0; # 9, 13, 19
 	_fields						= [];
 	
@@ -64,6 +68,32 @@ class Board():
 		
 		# init board dimensions with 0 values (0=empty, 1=black, 2= white)
 		self._fields =  [[0 for i in range(boardSize)] for j in range(boardSize)]
+		
+	# converts x=1,y=2 to A1
+	def XyToAz(self, x,y):
+		return chr(65+x)+str(y+1);
+		
+	# converts A1 to [0,0]
+	def AzToXy(self, azNotation):
+		if (len(azNotation) != 2):
+			return None;
+		return [ord(azNotation[0])-65, int(azNotation[1])-1]
+		
+	def GetField(self,x,y):
+		return self._fields[x][y];
+		
+	def SetField(self,x,y, value):
+		self._fields[x][y] = value;
+		
+	def GetNewBlackStones(self, detectedBlackStones):
+	# what are the new black stones in the list, not still on the board?
+		newBlack = [];
+		for stone in detectedBlackStones:
+			print ("checking field ",stone[0] ,stone[1]);
+			if (self.GetField(stone[0],stone[1]) != self.Black):
+				newBlack.extend([stone[0],stone[1]])
+		return newBlack;
+
 
 	def GetStepperXPos(self, fieldX):
 		return self.StepperMinX + int(fieldX * 1.0 * ((self.StepperMaxX-self.StepperMinX) / (self._boardSize-1.0)));
@@ -74,6 +104,7 @@ class Board():
 if __name__ == '__main__':
 	
 	board  = Board(13)
-	print (board._fields);
-
+	print (board._fields)
+	print (board.AzToXy("A1"))
+	
 	

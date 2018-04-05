@@ -354,6 +354,9 @@ class iGoBot:
 		xyPos = self._board.AzToXy(field);
 		print ("white AI stone to:", xyPos);
 		successfulDropped = False;
+		
+		self.FindBestCameraSettings();
+		
 		while(successfulDropped == False):
 
 			bot.GrabStoneFromStorage();
@@ -413,6 +416,7 @@ class iGoBot:
 			else:
 				self.MoveOutOfCameraSight();
 				self.Speak("Du bist am Zug. Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
+				self.FindBestCameraSettings();
 				self.WaitTillButtonPressed(color="green");
 				newBlackStones = self.GetNewStones(color=Board.Black);
 				if (len(newBlackStones) == 0):

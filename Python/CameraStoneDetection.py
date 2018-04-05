@@ -69,6 +69,9 @@ class CameraStoneDetection():
 	_process					= None
 
 	_released					= False
+	
+	# define settings of brightness and contrast
+	_settings					= [[50,50],[50,30],[50,80],[60,30],[60,50],[60,80],[70,50]];
 
 	def __init__(self):
 		print("camera init")
@@ -81,7 +84,13 @@ class CameraStoneDetection():
 		#thread.nice = -20 # -20 high prio, 20 low prio
 		#thread.start()
 		#thread.nice = -20
-
+		
+	def SetCameraSettings(self, settingsNo):
+		if (settingsNo >= len(self._settings)):
+			return False;
+		self._camera.brightness = self._settings[settingsNo][0];
+		self._camera.contrast = self._settings[settingsNo][0];
+		return True;
 
 	def detect(self, img, cascade):
 		rects = cascade.detectMultiScale(img, scaleFactor=1.1, minNeighbors=3, minSize=(int(self.__cameraResolutionX / 30), int( self.__cameraResolutionY / 30)), flags=cv2.CASCADE_SCALE_IMAGE)
@@ -97,7 +106,7 @@ class CameraStoneDetection():
 	def InitCamera(self):
 		print("camera start")
 		
-		
+
 		cv2.destroyAllWindows()
 		cv2.namedWindow(self._windowName, cv2.WINDOW_NORMAL)
 		cv2.resizeWindow(self._windowName, 400,300)
@@ -105,6 +114,7 @@ class CameraStoneDetection():
 		# initialize the camera and grab a reference to the raw camera capture
 		self._camera = PiCamera()
 		self._camera.resolution = (self.__cameraResolutionX, self.__cameraResolutionY)
+		self.SetCameraSettings(settingsNo=0);
 		self._camera.contrast = 50;
 		self._camera.brightness = 50;
 		self._camera.framerate = 12
@@ -184,8 +194,13 @@ def exit_handler():
 if __name__ == '__main__':
 
 	testCamera = CameraStoneDetection();
+	setting = 0;
 	for c in range(0,1000):
 		testCamera.Update();
-		#time.sleep(100)
+		setting = setting+1;
+		if (testCamera.SetCameraSettings(setting)==False):
+			setting = 0;
+			testCamera.SetCameraSettings(setting);
+		time.sleep(1)
 	testCamera.Release()
 

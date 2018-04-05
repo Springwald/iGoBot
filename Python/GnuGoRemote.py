@@ -86,6 +86,7 @@ class GnuGoRemote():
 			line = self._gnuGoInstance.stdout.readline()
 			if (line != b'\n'):
 				value = line;
+				print("gnuGo raw:", value);
 				cmdCheck = b'=' + str(self._cmdCount).encode() + b' ';
 				if (value.startswith(cmdCheck)):
 					done=True;
@@ -93,6 +94,7 @@ class GnuGoRemote():
 		self._cmdCount += 1
 		valueDecoded = value.decode("utf-8").strip();
 		result = valueDecoded.strip(' \r\n\t');
+		print("gnuGo raw:", result);
 		return result;
 
 	def Release(self):
@@ -109,14 +111,14 @@ def exit_handler():
 
 if __name__ == "__main__":
 	
-	gnuGo =  GnuGoRemote(boardSize=13);
+	gnuGo =  GnuGoRemote(boardSize=9);
 	
 	atexit.register(exit_handler)
 	
 	print(gnuGo.PlayerPlayBlack("A1"));
-	print(gnuGo.PlayerPlayBlack("M1"));
-	print(gnuGo.PlayerPlayBlack("A13"));
-	print(gnuGo.PlayerPlayBlack("M13"));
+	print(gnuGo.PlayerPlayBlack("I1"));
+	print(gnuGo.PlayerPlayBlack("A8"));
+	print(gnuGo.PlayerPlayBlack("I7"));
 	print("-" + gnuGo.AiPlayWhite() + "-");
 	print(gnuGo.PlayerPlayBlack("C3"));
 	print("-" + gnuGo.AiPlayWhite() + "-");

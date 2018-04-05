@@ -268,6 +268,9 @@ class iGoBot:
 		
 	def Speak(self, sentence, wait=False):
 		bot._speech.Speak(sentence, wait);
+		
+	
+		
 
 	def StoreAllWhiteStones(self):
 		tries = 0;
@@ -319,18 +322,67 @@ class iGoBot:
 				pressed = False;
 		self._leds.clearButton();
 
-	def GetNewBlackStones(self):
-		for i in range(1,4):
+	def GetNewStones(self, color=Board.Black):
+		self.MoveOutOfCameraSight();
+		for i in range(1,6):
 			self._cameraStoneDetection.Update();
-		blackStonesCoords = self._cameraStoneDetection.BlackStoneCoords;
-		blackStones = self._cameraStoneDetection.ToBoardFields(blackStonesCoords)
-		newBlackStones = self._board.GetNewBlackStones(blackStones);
-		print ("newBlackStones:", newBlackStones);
-		return newBlackStones;
-		
+		if (color==Board.Black):
+			coords = self._cameraStoneDetection.BlackStoneCoords;
+		else:
+			coords = self._cameraStoneDetection.WhiteStoneCoords;
+		stones = self._cameraStoneDetection.ToBoardFields(coords)
+		newStones = self._board.GetNewStones(stones,color);
+		return newStones;
+
 	def ClearBoard(self):
 		self._gnuGo.ClearBoard();
 		self._board = Board(self._board._boardSize);
+		
+	def FindBestCameraSettings(ignoreStones=[]): # ignoreStones are xy of stones, we don´t know, if they are really on the board. Like the last robot set stone.
+		# find out the camera setting where all stones on the board are detected correct
+		return;
+		
+	def PlayAiStone(self,white=True):
+		self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.", wait=False);
+		field = self._gnuGo.AiPlayWhite();
+		if (field==None):
+			print("Error: gnuGo AI suggested no white stone?!?");
+			return False;
+		if (field=="PASS"):
+			self.Speak("Ich passe!", wait=True);
+			return;
+		xyPos = self._board.AzToXy(field);
+		print ("white AI stone to:", xyPos);
+		successfulDropped = False;
+		while(successfulDropped == False):
+
+			bot.GrabStoneFromStorage();
+			bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
+
+			# check if stone really reached board
+			newWhiteStones = self.GetNewStones(color=Board.White);
+			if (len(newWhiteStones)==1):
+				if (newWhiteStones[0] == xyPos):
+					successfulDropped = True;
+				else:
+					self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.", wait=True);
+					self.Speak("Ich versuche, meine Kamera neu einzustellen.", wait=True);
+					self.Speak("Einen Augenblick bitte", wait=False);
+			else:
+				if (len(newWhiteStones)==0):
+					# set stone ist missing
+					self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist", wait=True);
+					self.Speak("Ich versuche es noch einmal", wait=False);
+				else:
+					# more than 1 new stone detectec. re-set camera
+					self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.", wait=True);
+					self.Speak("Ich versuche, meine Kamera neu einzustellen.", wait=True);
+					self.Speak("Einen Augenblick bitte", wait=False);
+					self.FindBestCameraSettings(ignoreStones[xyPos]);
+
+		self._board.SetField(xyPos[0],xyPos[1],Board.White);
+		return True;
+		
 
 	def PlayWhiteGame(self):
 		self.ClearBoard();
@@ -340,7 +392,7 @@ class iGoBot:
 		
 		# detect handycap stones
 		self.UpdateMotors();
-		handicapStones = self.GetNewBlackStones();
+		handicapStones = self.GetNewStones(color=Board.Black);
 
 		if (len(handicapStones) == 0):
 			self.Speak("Du hast keine Vorgabe Steine gelegt.", wait=True);
@@ -348,7 +400,7 @@ class iGoBot:
 		else:
 			self.Speak("Du hast " + str(len(handicapStones)) + " Vorgabe Steine gelegt.", wait=True);
 			for stone in handicapStones:
-				self._board.SetField(stone[0],stone[1],self._board.Black);
+				self._board.SetField(stone[0],stone[1],Board.Black);
 				fieldAz = self._board.XyToAz(stone[0],stone[1]);
 				print ("check set black: ", self._board.GetField(stone[0],stone[1]));
 				self._gnuGo.PlayerPlayBlack(fieldAz);
@@ -356,31 +408,19 @@ class iGoBot:
 
 		while(True):
 			if (whiteToPlay):
-				self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.", wait=False);
-				field = self._gnuGo.AiPlayWhite();
-				if (field==None):
-					print("Error: gnuGo AI suggested no white stone?!?");
-				else:
-					xyPos = self._board.AzToXy(field);
-					print ("white AI stone to:", xyPos);
-					bot.GrabStoneFromStorage();
-					bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
-					self._board.SetField(xyPos[0],xyPos[1],self._board.White);
+				if (self.PlayAiStone(white=True))==True:
 					whiteToPlay = False;
 			else:
 				self.MoveOutOfCameraSight();
 				self.Speak("Du bist am Zug. Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
 				self.WaitTillButtonPressed(color="green");
-				self._cameraStoneDetection.Update();
-				blackStonesCoords = self._cameraStoneDetection.BlackStoneCoords;
-				blackStones = self._cameraStoneDetection.ToBoardFields(blackStonesCoords)
-				newBlackStones = self._board.GetNewBlackStones(blackStones);
+				newBlackStones = self.GetNewStones(color=Board.Black);
 				if (len(newBlackStones) == 0):
 					self.Speak("Ich sehe keinen neuen schwarzen Stein", wait=True);
 				else:
 					if (len(newBlackStones) == 1):
 						for stone in newBlackStones:
-							self._board.SetField(stone[0],stone[1],self._board.Black);
+							self._board.SetField(stone[0],stone[1],Board.Black);
 							fieldAz = self._board.XyToAz(stone[0],stone[1]);
 							self._gnuGo.PlayerPlayBlack(fieldAz);
 							self.Speak("Ein interessanter Zug.", wait=False);

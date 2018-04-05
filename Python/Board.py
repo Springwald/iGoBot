@@ -83,14 +83,20 @@ class Board():
 		
 	# converts x=1,y=2 to A1
 	def XyToAz(self, x,y):
+		if (x > 7):
+			x=x+1; # i is not defined, jump to j
 		return chr(65+x)+str(y+1);
 		
 	# converts A1 to [0,0]
 	def AzToXy(self, azNotation):
-		if (len(azNotation) != 2):
-			print ("board.AzToXy for '" + azNotation + "' is not exact 2 chars long");
+		if (len(azNotation) != 2 and len(azNotation) != 3):
+			print ("board.AzToXy for '" + azNotation + "' is not exact 2-3 chars long");
 			return None;
-		return [ord(azNotation[0])-65, int(azNotation[1])-1]
+		x = ord(azNotation[0])-65;
+		if (x > 7):
+			 x=x-1; # i is not defined, jump to h
+		y = int(azNotation[1:])-1;
+		return [x,y]
 		
 	def GetField(self,x,y):
 		return self._fields[x][y];
@@ -98,18 +104,13 @@ class Board():
 	def SetField(self,x,y, value):
 		self._fields[x][y] = value;
 		
-	def GetNewBlackStones(self, detectedBlackStones):
-	# what are the new black stones in the list, not still on the board?
-		newBlack = [];
-		for stone in detectedBlackStones:
-			print ("checking field ",stone[0] ,stone[1], self.GetField(stone[0],stone[1]));
-			if (self.GetField(stone[0],stone[1]) == self.Black):
-				# no new black stone
-				print("black stone on ",stone[0] ,stone[1], "already existed.");
-			else:
-				print("adding ",stone[0] ,stone[1],"to new black stone result");
-				newBlack.extend([[stone[0],stone[1]]])
-		return newBlack;
+	def GetNewStones(self, detectedStones, color=Black):
+	# what are the new black/whites stones in the list, not still on the board?
+		newStones = [];
+		for stone in detectedStones:
+			if (self.GetField(stone[0],stone[1]) != color):
+				newStones.extend([[stone[0],stone[1]]])
+		return newStones;
 
 	def GetStepperXPos(self, fieldX):
 		return self.StepperMinX + int(fieldX * 1.0 * ((self.StepperMaxX-self.StepperMinX) / (self._boardSize-1.0)));
@@ -125,5 +126,9 @@ if __name__ == '__main__':
 	board.SetField(0,0,board.Black);
 	print(board.GetField(0,0));
 	print(board.GetField(0,0) == board.Black);
+	
+	for x in range(0,13):
+		f = board.XyToAz(x,x);
+		print([x,x],f, board.AzToXy(f));
 	
 	

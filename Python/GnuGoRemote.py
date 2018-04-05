@@ -47,30 +47,12 @@ class GnuGoRemote():
 		cmd = "/usr/games/gnugo"
 		self._gnuGoInstance = Popen([cmd , "--mode", "gtp"], stdout=PIPE, stdin=PIPE);
 		print(self.SendGnuGoCommand("boardsize " + str(boardSize)));
-		print(self.SendGnuGoCommand("clear_board"));
-
-	def SendGnuGoCommand(self, command):
-		debug = False
-		cmd = str(self._cmdCount).encode() + b' ' + command.encode() + b'\n';
-		if debug:
-			print (cmd)
-		self._gnuGoInstance.stdin.write(cmd)
-		self._gnuGoInstance.stdin.flush()
-		done = False;
-		while(not done):
-			line = self._gnuGoInstance.stdout.readline()
-			if (line != b'\n'):
-				value = line;
-				if (value.startswith(b'=' + str(self._cmdCount).encode())):
-					done=True;
-		self._cmdCount += 1
-		valueDecoded = value.decode("utf-8").strip();
-		if " " in valueDecoded: 
-			check, result = valueDecoded.split(' ')
-			return result;
-		else:
-			return '';
-			
+		self.ClearBoard();
+		
+	def ClearBoard(self):
+		print("gnuGo: clear board");
+		return self.SendGnuGoCommand('clear_board')
+		
 	def PlayerPlayWhite(self, fieldAz):
 		print("gnuGo: Players put white on ", fieldAz);
 		return self.SendGnuGoCommand('play white ' + fieldAz)
@@ -83,7 +65,36 @@ class GnuGoRemote():
 		stone = self.SendGnuGoCommand('genmove white')
 		print("gnuGo: AI put white on ", stone);
 		return stone;
-			
+		
+	def ListBlackStones(self):
+		stones = self.SendGnuGoCommand('list_stones black');
+		return stones.split(' ');
+
+	def ListWhiteStones(self):
+		stones = self.SendGnuGoCommand('list_stones white');
+		return stones.split(' ');
+	
+	def SendGnuGoCommand(self, command):
+		debug = False
+		cmd = str(self._cmdCount).encode() + b' ' + command.encode() + b'\n';
+		if debug:
+			print (cmd)
+		self._gnuGoInstance.stdin.write(cmd)
+		self._gnuGoInstance.stdin.flush()
+		done = False;
+		while(not done):
+			line = self._gnuGoInstance.stdout.readline()
+			if (line != b'\n'):
+				value = line;
+				cmdCheck = b'=' + str(self._cmdCount).encode() + b' ';
+				if (value.startswith(cmdCheck)):
+					done=True;
+					value = value[len(cmdCheck):];
+		self._cmdCount += 1
+		valueDecoded = value.decode("utf-8").strip();
+		result = valueDecoded.strip(' \r\n\t');
+		return result;
+
 	def Release(self):
 		if (self._released == False):
 			self._released = True;
@@ -102,10 +113,24 @@ if __name__ == "__main__":
 	
 	atexit.register(exit_handler)
 	
-	print(gnuGo.SendGnuGoCommand('genmove white'));
-	print(gnuGo.SendGnuGoCommand('genmove white'));
-	print(gnuGo.SendGnuGoCommand('genmove black'));
-	print(gnuGo.SendGnuGoCommand('genmove white'));
+	print(gnuGo.PlayerPlayBlack("A1"));
+	print(gnuGo.PlayerPlayBlack("M1"));
+	print(gnuGo.PlayerPlayBlack("A13"));
+	print(gnuGo.PlayerPlayBlack("M13"));
+	print("-" + gnuGo.AiPlayWhite() + "-");
+	print(gnuGo.PlayerPlayBlack("C3"));
+	print("-" + gnuGo.AiPlayWhite() + "-");
+	print(gnuGo.PlayerPlayBlack("C4"));
+	print("-" + gnuGo.AiPlayWhite() + "-");
+	print(gnuGo.PlayerPlayBlack("C5"));
+	print("-" + gnuGo.AiPlayWhite() + "-");
+	
+	print("black:" ,gnuGo.ListBlackStones());
+	print("white:", gnuGo.ListWhiteStones());
+	
+	#print(gnuGo.SendGnuGoCommand('genmove white'));
+#	print(gnuGo.SendGnuGoCommand('genmove black'));
+#	print(gnuGo.SendGnuGoCommand('genmove white'));
 	
 
 

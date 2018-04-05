@@ -65,6 +65,7 @@ class iGoBot:
 	_zAxisAdress					= 0x0f
 	_gripperAdress					= 0x40
 	_lightGrovePort					= 8
+	_soundcard						="plughw:1"
 	
 	_ended							= False
 	_released						= False
@@ -89,14 +90,14 @@ class iGoBot:
 	_yPosStoneStorageDrop			= 3800
 	
 	# where to move to grab a new stone from dispenser
-	_xPosStoneStorageGrab			= 4160 ##
-	_yPosStoneStorageGrab			= 3470
+	_xPosStoneStorageGrab			= 4160 
+	_yPosStoneStorageGrab			= 3460
 	
 	_yPosOutOfCameraSight			= 3800
 	
 	_zPosMaxUp						= 0;
 	_zPosUp							= 400;
-	_zPosDropOnBoard				= 620;
+	_zPosDropOnBoard				= 600;
 	_zPosOnBoard					= 635;
 	_zPosOnDispenserGrab			= 700;
 	
@@ -114,7 +115,7 @@ class iGoBot:
 		
 		self._leds = RgbLeds();
 		
-		self._speech = SpeechOutput();
+		self._speech = SpeechOutput(soundcard=self._soundcard);
 		
 		self._camera = CameraStoneDetection();
 		self._board = Board(boardSize);
@@ -140,7 +141,8 @@ class iGoBot:
 		
 		# test stone board coordinates
 		if (False):
-			for i in [[0,0],[0,12],[12,12],[12,0]]:
+			#for i in [[0,0],[0,12],[12,12],[12,0]]:
+			for i in [[0,0],[0,8],[8,8],[8,0]]:
 				self.MoveToXY(self._board.GetStepperXPos(i[0]),self._board.GetStepperYPos(i[1]));
 				for a in range(0,3):
 					self.TakeStoneFromBoard();
@@ -237,7 +239,7 @@ class iGoBot:
 	def MoveToY(self, pos):
 		if (self._yAxis.targetPos == pos):
 			 return;
-		overdrive = 150;
+		overdrive = 100;
 		if (self._yAxis.targetPos > pos):
 			self._yAxis.targetPos = pos - overdrive;
 		else:
@@ -316,27 +318,36 @@ class iGoBot:
 			if (not self._switches.getBit(bit=16)):
 				pressed = False;
 		self._leds.clearButton();
-		
 
+	def GetNewBlackStones(self):
+		for i in range(1,4):
+			self._cameraStoneDetection.Update();
+		blackStonesCoords = self._cameraStoneDetection.BlackStoneCoords;
+		blackStones = self._cameraStoneDetection.ToBoardFields(blackStonesCoords)
+		newBlackStones = self._board.GetNewBlackStones(blackStones);
+		print ("newBlackStones:", newBlackStones);
+		return newBlackStones;
+		
+	def ClearBoard(self):
+		self._gnuGo.ClearBoard();
+		self._board = Board(self._board._boardSize);
 
 	def PlayWhiteGame(self):
+		self.ClearBoard();
+		
 		self.Speak("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste.", wait=True);
 		self.WaitTillButtonPressed(color="green");
 		
 		# detect handycap stones
 		self.UpdateMotors();
+		handicapStones = self.GetNewBlackStones();
 
-		whiteToPlay = False;
-
-		self._cameraStoneDetection.Update();
-		blackStonesCoords = self._cameraStoneDetection.BlackStoneCoords;
-		blackStones = self._cameraStoneDetection.ToBoardFields(blackStonesCoords)
-		if (len(blackStones) == 0):
+		if (len(handicapStones) == 0):
 			self.Speak("Du hast keine Vorgabe Steine gelegt.", wait=True);
 			whiteToPlay = False;
 		else:
-			self.Speak("Du hast " + str(len(blackStones)) + " Vorgabe Steine gelegt.", wait=True);
-			for stone in blackStones:
+			self.Speak("Du hast " + str(len(handicapStones)) + " Vorgabe Steine gelegt.", wait=True);
+			for stone in handicapStones:
 				self._board.SetField(stone[0],stone[1],self._board.Black);
 				fieldAz = self._board.XyToAz(stone[0],stone[1]);
 				print ("check set black: ", self._board.GetField(stone[0],stone[1]));
@@ -345,35 +356,37 @@ class iGoBot:
 
 		while(True):
 			if (whiteToPlay):
-				self.Speak("Ich bim am Zug. Bitte einen Augenblick Geduld.", wait=False);
+				self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.", wait=False);
 				field = self._gnuGo.AiPlayWhite();
-				xyPos = self._board.AzToXy(field);
-				print ("white AI stone to:", xyPos);
-				bot.GrabStoneFromStorage();
-				bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
-				self._board.SetField(xyPos[0],xyPos[1],self._board.White);
-				whiteToPlay = False;
+				if (field==None):
+					print("Error: gnuGo AI suggested no white stone?!?");
+				else:
+					xyPos = self._board.AzToXy(field);
+					print ("white AI stone to:", xyPos);
+					bot.GrabStoneFromStorage();
+					bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
+					self._board.SetField(xyPos[0],xyPos[1],self._board.White);
+					whiteToPlay = False;
 			else:
 				self.MoveOutOfCameraSight();
-				self.Speak("Du bist am Zug. Bitte legen einen schwarzen Stein und drücke dann die Taste.", wait=False);
+				self.Speak("Du bist am Zug. Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
 				self.WaitTillButtonPressed(color="green");
-				
 				self._cameraStoneDetection.Update();
 				blackStonesCoords = self._cameraStoneDetection.BlackStoneCoords;
 				blackStones = self._cameraStoneDetection.ToBoardFields(blackStonesCoords)
 				newBlackStones = self._board.GetNewBlackStones(blackStones);
-				if (len(blackStones) == 0):
+				if (len(newBlackStones) == 0):
 					self.Speak("Ich sehe keinen neuen schwarzen Stein", wait=True);
 				else:
-					if (len(blackStones) == 1):
+					if (len(newBlackStones) == 1):
 						for stone in newBlackStones:
 							self._board.SetField(stone[0],stone[1],self._board.Black);
 							fieldAz = self._board.XyToAz(stone[0],stone[1]);
 							self._gnuGo.PlayerPlayBlack(fieldAz);
-							self.Speak("Ein interessanter Zug.", wait=True);
+							self.Speak("Ein interessanter Zug.", wait=False);
 							whiteToPlay = True;
 					else:
-						self.Speak("Ich sehe " + str(len(blackStones)) + " statt einem neuen schwarzen Stein", wait=True);
+						self.Speak("Ich sehe " + str(len(newBlackStones)) + " statt einem neuen schwarzen Stein", wait=True);
 
 	def Release(self):
 		if (self._released == False):
@@ -385,16 +398,7 @@ class iGoBot:
 				
 			if (self._camera != None):
 				self._camera.Release();
-				
-			if (self._gnuGo != None):
-				self._gnuGo.Release();
-			
-			if (self._gripperAndDispenser != None):
-				self._gripperAndDispenser.openGripper();
-				while(self._gripperAndDispenser.allTargetsReached == False):
-					self._gripperAndDispenser.Update();
-				self._gripperAndDispenser.Release();
-			
+
 			if (self._zAxis != None):
 				self.MoveToZ(0);
 				self._zAxis.Release()
@@ -416,6 +420,15 @@ class iGoBot:
 				
 			if (self._speech != None):
 				self._speech.Release();
+				
+			if (self._gripperAndDispenser != None):
+				self._gripperAndDispenser.openGripper();
+				while(self._gripperAndDispenser.allTargetsReached == False):
+					self._gripperAndDispenser.Update();
+				self._gripperAndDispenser.Release();
+			
+			if (self._gnuGo != None):
+				self._gnuGo.Release();
 
 			self._ended = True
 
@@ -427,13 +440,16 @@ def exit_handler():
 
 if __name__ == "__main__":
 	
-	bot = iGoBot()
+	bot = iGoBot(boardSize=9)
 	
 	atexit.register(exit_handler)
 	
 	#bot.StoreAllWhiteStones();
 	
-	#bot.PlayWhiteGame();
+	#bot.MoveToXY(500,500);
+	#time.sleep(10000);
+	
+	bot.PlayWhiteGame();
 	
 	#bot.StoreAllWhiteStones();
 	
@@ -448,10 +464,11 @@ if __name__ == "__main__":
 		while (bot._speech.speaking==True):
 				time.sleep(1)
 		
-		
-	for i in range(0,12):
-		bot.GrabStoneFromStorage();
-		bot.PutStoneToFieldPos(i,i);
+	
+	if (False):	
+		for i in range(0,9):
+			bot.GrabStoneFromStorage();
+			bot.PutStoneToFieldPos(i,i);
 
 		
 	

@@ -44,10 +44,15 @@ class Board():
 	_fields						= [];
 	
 	# Stepper motor positions
-	_13x13_xMin						= 735; #735;
+	_13x13_xMin						= 735; 
 	_13x13_xMax						= 3350;
-	_13x13_yMin						= 100; # 90;
+	_13x13_yMin						= 100; 
 	_13x13_yMax						= 2890;
+	
+	_9x9_xMin						= 1120; 
+	_9x9_xMax						= 2940;
+	_9x9_yMin						= 560; 
+	_9x9_yMax						= 2400;
 	
 	StepperMinX						= 0;
 	StepperMaxX 					= 0;
@@ -64,7 +69,14 @@ class Board():
 			self.StepperMinY = self._13x13_yMin;
 			self.StepperMaxY = self._13x13_yMax;
 		else:
-			throw ("unknown board size " , boardSize, "x", boardSize);
+			if (boardSize == 9):
+				print("Board: size " , boardSize, "x", boardSize);
+				self.StepperMinX = self._9x9_xMin;
+				self.StepperMaxX = self._9x9_xMax
+				self.StepperMinY = self._9x9_yMin;
+				self.StepperMaxY = self._9x9_yMax;
+			else:
+				throw ("unknown board size " , boardSize, "x", boardSize);
 		
 		# init board dimensions with 0 values (0=empty, 1=black, 2= white)
 		self._fields =  [[0 for i in range(boardSize)] for j in range(boardSize)]
@@ -76,6 +88,7 @@ class Board():
 	# converts A1 to [0,0]
 	def AzToXy(self, azNotation):
 		if (len(azNotation) != 2):
+			print ("board.AzToXy for '" + azNotation + "' is not exact 2 chars long");
 			return None;
 		return [ord(azNotation[0])-65, int(azNotation[1])-1]
 		
@@ -89,11 +102,14 @@ class Board():
 	# what are the new black stones in the list, not still on the board?
 		newBlack = [];
 		for stone in detectedBlackStones:
-			print ("checking field ",stone[0] ,stone[1]);
-			if (self.GetField(stone[0],stone[1]) != self.Black):
-				newBlack.extend([stone[0],stone[1]])
+			print ("checking field ",stone[0] ,stone[1], self.GetField(stone[0],stone[1]));
+			if (self.GetField(stone[0],stone[1]) == self.Black):
+				# no new black stone
+				print("black stone on ",stone[0] ,stone[1], "already existed.");
+			else:
+				print("adding ",stone[0] ,stone[1],"to new black stone result");
+				newBlack.extend([[stone[0],stone[1]]])
 		return newBlack;
-
 
 	def GetStepperXPos(self, fieldX):
 		return self.StepperMinX + int(fieldX * 1.0 * ((self.StepperMaxX-self.StepperMinX) / (self._boardSize-1.0)));
@@ -106,5 +122,8 @@ if __name__ == '__main__':
 	board  = Board(13)
 	print (board._fields)
 	print (board.AzToXy("A1"))
+	board.SetField(0,0,board.Black);
+	print(board.GetField(0,0));
+	print(board.GetField(0,0) == board.Black);
 	
 	

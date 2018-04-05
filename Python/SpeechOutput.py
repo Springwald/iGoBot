@@ -40,8 +40,10 @@ sys.path.insert(0, os.path.abspath("libs"))
 class SpeechOutput():
 
 	_released					= False;
+	_soundcard					= None;
 
-	def __init__(self):
+	def __init__(self, soundcard=""):  # soundCard="plughw:1" for Soundcard 1
+		self._soundcard = soundcard;
 		print("speech init")
 
 	def Speak(self, content, wait=False):
@@ -50,13 +52,9 @@ class SpeechOutput():
 		espeak_process = subprocess.Popen(["espeak", "-vmb-de2", "-s140", content, "--stdout"], stdout=subprocess.PIPE) # more human speech
 
 		if (wait==True):
-			aplay_process = subprocess.call(["aplay", "-D","plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE) # soundcard 1
-			#aplay_process = subprocess.call(["aplay", "-D","plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE) # default soundcard
-			#aplay_process = subprocess.call(["aplay"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
+			aplay_process = subprocess.call(["aplay", "-D", self._soundcard], stdin=espeak_process.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) 
 		else:
-			#aplay_process = subprocess.Popen(["aplay", "-D", "sysdefault"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
-			aplay_process = subprocess.Popen(["aplay", "-D", "plughw:1"], stdin=espeak_process.stdout, stdout=subprocess.PIPE)
-			
+			aplay_process = subprocess.Popen(["aplay", "-D", self._soundcard], stdin=espeak_process.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 			
 	def Release(self):
 		if (self._released == False):
@@ -77,7 +75,7 @@ if __name__ == "__main__":
 		
 	pygame.init()
 	
-	speechOut = SpeechOutput() 
+	speechOut = SpeechOutput(soundcard="plughw:1") 
 	
 	atexit.register(exit_handler)
 	

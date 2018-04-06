@@ -46,14 +46,15 @@ from Board import Board
 from GnuGoRemote import GnuGoRemote
 from CameraStoneDetection import CameraStoneDetection
 from BoardDetectionCalibration import BoardDetectionCalibration
-from SpeechOutput import SpeechOutput
+from DanielsRasPiPythonLibs.speech.SpeechOutput import SpeechOutput
 
-from hardware.PCF8574 import PCF8574
-from hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
-from hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
+from DanielsRasPiPythonLibs.hardware.PCF8574 import PCF8574
+from DanielsRasPiPythonLibs.hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
+from DanielsRasPiPythonLibs.hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
 from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
 from hardware.RgbLeds import RgbLeds
+from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 
 import atexit
 
@@ -113,9 +114,9 @@ class iGoBot:
 		self._light = Light(self._lightGrovePort);
 		self._light.On();
 		
-		self._leds = RgbLeds();
+		self._leds = iGoBotRgbLeds();
 		
-		self._speech = SpeechOutput(soundcard=self._soundcard);
+		self._speech = SpeechOutput(soundcard=self._soundcard, voice="-vmb-de2");
 		
 		self._camera = CameraStoneDetection();
 		self._board = Board(boardSize);

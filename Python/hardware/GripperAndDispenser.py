@@ -36,16 +36,15 @@ my_file = os.path.abspath(__file__)
 my_path ='/'.join(my_file.split('/')[0:-1])
 
 sys.path.insert(0,my_path + "/../libs" )
-
-#from I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
+sys.path.insert(0,my_path + "/../DanielsRasPiPythonLibs" )
+sys.path.insert(0,my_path + "/../DanielsRasPiPythonLibs/multitasking" )
 
 from array import array
 import Adafruit_PCA9685
+import grovepi
 
 from SharedInts import SharedInts
 from SharedFloats import SharedFloats
-
-import grovepi
 
 class GripperAndDispenser():
 	

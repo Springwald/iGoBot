@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-#     ##################################
+#     ##########################
 #     # RGB LED control module #
-#     ##################################
+#     ##########################
 #
 #     Licensed under MIT License (MIT)
 #
@@ -27,58 +27,35 @@
 #     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 #     DEALINGS IN THE SOFTWARE.
 
-
 #!/usr/bin/python
 # mcroboface.py
 
+from __future__ import division
+import time, sys, os
+
+my_file = os.path.abspath(__file__)
+my_path ='/'.join(my_file.split('/')[0:-1])
+
+sys.path.insert(0,my_path + "/../DanielsRasPiPythonLibs/hardware/" )
+
 import time
 from neopixel import *
+from RgbLeds import RgbLeds
+from McRoboFace import McRoboFace
 
-class RgbLeds():
+class iGoBotRgbLeds():
 
-	# LED strip configuration:
-	Start_LED_FACE		= 0		 # LEDs before the McRoboFace
-	LED_COUNT_FACE		= 17
-	Start_LED_BUTTON	= LED_COUNT_FACE	 # LEDs before the Button
-	LED_COUNT_BUTTON	= 12
-	LED_COUNT      		= LED_COUNT_FACE+LED_COUNT_BUTTON   # Number of LED pixels.
-	LED_PIN        		= 18		# GPIO pin connected to the pixels (must support PWM!).
-	LED_FREQ_HZ    		= 800000	# LED signal frequency in hertz (usually 800khz)
-	LED_DMA        		= 5			# DMA channel to use for generating signal (try 5)
-	LED_BRIGHTNESS 		= 64		# Set to 0 for darkest and 255 for brightest
-	LED_INVERT     		= False		# True to invert the signal (when using NPN transistor level shift)
-	
-	_pixels				= None;
+	_leds				= None;
+	_face				= None;
+
+	_buttonLedStart		= 17;
+	_buttonLedCount		= 12;
+
 	_released			= False
-
-	# Define various facial expressions
-	smileData   = [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1]
-	frownData   = [1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1]
-	grimaceData = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1]
-	oooohData   = [0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1]
 	
 	def __init__(self):
-		# Initialis the McRoboFace controllers
-		self._pixels = Adafruit_NeoPixel(self.LED_COUNT, self.LED_PIN, self.LED_FREQ_HZ, self.LED_DMA, self.LED_INVERT, self.LED_BRIGHTNESS)
-		self._pixels.begin()
-
-	def clearFace(self):
-		for i in range(0, self.Start_LED_FACE + self.LED_COUNT_FACE):
-			self._pixels.setPixelColor(i, 0)
-			self._pixels.show()   
-			
-	def clearButton(self):
-		for i in range(0, self.Start_LED_BUTTON + self.LED_COUNT_BUTTON):
-			self._pixels.setPixelColor(i, 0)
-			self._pixels.show()                                       
-
-	def showFace (self, data, Red, Green, Blue):
-		for i in range(0, len(data)):
-			if (data[i] > 0):
-				self._pixels.setPixelColor(self.Start_LED_FACE+i, Color(Green, Red, Blue))
-			else:
-				self._pixels.setPixelColor(self.Start_LED_FACE+i, 0)
-		self._pixels.show()           
+		self._leds = RgbLeds(ledCount=29, ledBrightness=100);
+		self._face = McRoboFace(self._leds);
 
 	def theaterChase(self, color, wait_ms=50, iterations=1):
 	#Movie theater light style chaser animation."""
@@ -122,44 +99,24 @@ class RgbLeds():
 	def AnimateButtonGreen(self):
 		#self.rainbowCycle();
 		#self.colorWipe(Color(127,0,0));
-		self.theaterChase(Color(127,0,0));
+		self._leds.theaterChase(Color(127,0,0));
 		#time.sleep(0.01);
 
-	def McRoboFaceDemo(self):
-		try:
-			self.clearFace()
-			self.showFace (self.smileData, 255, 0 , 0)
-			time.sleep(2)
-			self.showFace (self.frownData, 0, 0, 255)
-			time.sleep(2)
-			self.showFace (self.grimaceData, 255, 0, 255)
-			time.sleep(2)
-			self.showFace (self.oooohData, 0, 255, 0)
-			time.sleep(2)
-		except KeyboardInterrupt:
-			print
-		finally:
-			self.clearFace()
 
 	def Release(self):
 		if (self._released == False):
 			self._released = True
-			print("RGB LEDs releasing")
-			self.clearFace();
-			self.clearButton();
+			print("iGoBotRgbLeds releasing")
+			self._leds.Release();
+			self._face.Release();
 
 	def __del__(self):
 		self.Release()    
 
 if __name__ == "__main__":
 
-	leds = RgbLeds();
-
-	for i in range(1,20):
-		leds.AnimateButtonGreen();
-	
-	leds.McRoboFaceDemo();
-
+	leds = iGoBotRgbLeds();
+	time.sleep(2);
 	leds.Release()
 
 

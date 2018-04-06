@@ -57,51 +57,20 @@ class iGoBotRgbLeds():
 		self._leds = RgbLeds(ledCount=29, ledBrightness=100);
 		self._face = McRoboFace(self._leds);
 
-	def theaterChase(self, color, wait_ms=50, iterations=1):
-	#Movie theater light style chaser animation."""
-		for j in range(iterations):
-			for q in range(3):
-				for i in range(0, self.LED_COUNT_BUTTON, 3):
-					self._pixels.setPixelColor(self.Start_LED_BUTTON+i+q, color)
-				self._pixels.show()
-				time.sleep(wait_ms/1000.0)
-				for i in range(0, self.LED_COUNT_BUTTON, 3):
-					self._pixels.setPixelColor(self.Start_LED_BUTTON+i+q, 0)
-					
-	def colorWipe(self, color, wait_ms=0.1):
-		#Wipe color across display a pixel at a time.
-		for i in range(self.LED_COUNT_BUTTON):
-			self._pixels.setPixelColor(self.Start_LED_BUTTON+i , color)
-			self._pixels.show()
-			time.sleep(wait_ms/1000.0)
-			
-
-	def wheel(self,pos):
-		#Generate rainbow colors across 0-255 positions."""
-		if pos < 85:
-			return Color(pos * 3, 255 - pos * 3, 0)
-		elif pos < 170:
-			pos -= 85
-			return Color(255 - pos * 3, 0, pos * 3)
-		else:
-			pos -= 170
-			return Color(0, pos * 3, 255 - pos * 3)
-			
-	def rainbowCycle(self, wait_ms=10, iterations=1):
-		"""Draw rainbow that uniformly distributes itself across all pixels."""
-		strip = self._pixels
-		for j in range(256*iterations):
-			for i in range(self.LED_COUNT_BUTTON):
-				strip.setPixelColor(self.Start_LED_BUTTON+i, self.wheel(((int(i * 256 / strip.numPixels()) + j) & 255)))
-			strip.show()
-			time.sleep(wait_ms/1000.0)
-
 	def AnimateButtonGreen(self):
 		#self.rainbowCycle();
 		#self.colorWipe(Color(127,0,0));
-		self._leds.theaterChase(Color(127,0,0));
+		self._leds.theaterChase(Color(127,0,0), countLed=self._buttonLedCount, startLed=self._buttonLedStart);
 		#time.sleep(0.01);
 
+	def Speak(self):
+		self._face.Speak();
+		
+	def NeutralFace(self, red=255, green=255, blue=255):
+		self._face.showFace(self._face.neutral, red, green, blue);
+		
+	def NeutralAndBlink(self, red=255, green=255, blue=255):
+		self._face.NeutralAndBlink(red, green, blue);
 
 	def Release(self):
 		if (self._released == False):
@@ -116,7 +85,11 @@ class iGoBotRgbLeds():
 if __name__ == "__main__":
 
 	leds = iGoBotRgbLeds();
-	time.sleep(2);
+	for i in range(1,10):
+		leds.AnimateButtonGreen();
+	for i in range(1,10):
+		leds.Speak();
+		time.sleep(0.1);
 	leds.Release()
 
 

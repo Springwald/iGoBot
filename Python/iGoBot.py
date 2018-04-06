@@ -51,9 +51,9 @@ from DanielsRasPiPythonLibs.speech.SpeechOutput import SpeechOutput
 from DanielsRasPiPythonLibs.hardware.PCF8574 import PCF8574
 from DanielsRasPiPythonLibs.hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
 from DanielsRasPiPythonLibs.hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
+from DanielsRasPiPythonLibs.hardware.RgbLeds import RgbLeds
 from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
-from hardware.RgbLeds import RgbLeds
 from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 
 import atexit
@@ -267,11 +267,12 @@ class iGoBot:
 		self.MoveToXY(stepperX, stepperY);
 		self.PutStoneToBoard();
 		
-	def Speak(self, sentence, wait=False):
-		bot._speech.Speak(sentence, wait);
-		
-	
-		
+	def Speak(self, sentence):
+		self._speech.Speak(sentence, wait=False);
+		while(self._speech.IsSpeaking()):
+			self._leds.Speak();
+			time.sleep(0.25);
+		self._leds.NeutralFace();
 
 	def StoreAllWhiteStones(self):
 		tries = 0;
@@ -312,6 +313,7 @@ class iGoBot:
 			self.UpdateMotors();
 			self._gripperAndDispenser.Update();
 			self._leds.AnimateButtonGreen();
+			self._leds.NeutralAndBlink();
 			if (self._switches.getBit(bit=16)):
 				pressed = True;
 		# wait till released
@@ -321,6 +323,7 @@ class iGoBot:
 			self._leds.AnimateButtonGreen();
 			if (not self._switches.getBit(bit=16)):
 				pressed = False;
+		self._leds.NeutralFace();
 		self._leds.clearButton();
 
 	def GetNewStones(self, color=Board.Black):
@@ -344,7 +347,7 @@ class iGoBot:
 		return;
 		
 	def PlayAiStone(self,white=True):
-		self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.", wait=False);
+		self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.");
 		field = self._gnuGo.AiPlayWhite();
 		if (field==None):
 			print("Error: gnuGo AI suggested no white stone?!?");
@@ -369,19 +372,19 @@ class iGoBot:
 				if (newWhiteStones[0] == xyPos):
 					successfulDropped = True;
 				else:
-					self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.", wait=True);
-					self.Speak("Ich versuche, meine Kamera neu einzustellen.", wait=True);
-					self.Speak("Einen Augenblick bitte", wait=False);
+					self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.");
+					self.Speak("Ich versuche, meine Kamera neu einzustellen.");
+					self.Speak("Einen Augenblick bitte");
 			else:
 				if (len(newWhiteStones)==0):
 					# set stone ist missing
-					self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist", wait=True);
-					self.Speak("Ich versuche es noch einmal", wait=False);
+					self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist",);
+					self.Speak("Ich versuche es noch einmal");
 				else:
 					# more than 1 new stone detectec. re-set camera
-					self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.", wait=True);
-					self.Speak("Ich versuche, meine Kamera neu einzustellen.", wait=True);
-					self.Speak("Einen Augenblick bitte", wait=False);
+					self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.");
+					self.Speak("Ich versuche, meine Kamera neu einzustellen.");
+					self.Speak("Einen Augenblick bitte");
 					self.FindBestCameraSettings(ignoreStones[xyPos]);
 
 		self._board.SetField(xyPos[0],xyPos[1],Board.White);
@@ -391,7 +394,7 @@ class iGoBot:
 	def PlayWhiteGame(self):
 		self.ClearBoard();
 		
-		self.Speak("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste.", wait=True);
+		self.Speak("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste.");
 		self.WaitTillButtonPressed(color="green");
 		
 		# detect handycap stones
@@ -399,10 +402,10 @@ class iGoBot:
 		handicapStones = self.GetNewStones(color=Board.Black);
 
 		if (len(handicapStones) == 0):
-			self.Speak("Du hast keine Vorgabe Steine gelegt.", wait=True);
+			self.Speak("Du hast keine Vorgabe Steine gelegt.");
 			whiteToPlay = False;
 		else:
-			self.Speak("Du hast " + str(len(handicapStones)) + " Vorgabe Steine gelegt.", wait=True);
+			self.Speak("Du hast " + str(len(handicapStones)) + " Vorgabe Steine gelegt.");
 			for stone in handicapStones:
 				self._board.SetField(stone[0],stone[1],Board.Black);
 				fieldAz = self._board.XyToAz(stone[0],stone[1]);
@@ -416,22 +419,22 @@ class iGoBot:
 					whiteToPlay = False;
 			else:
 				self.MoveOutOfCameraSight();
-				self.Speak("Du bist am Zug. Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
+				self.Speak("Du bist am Zug. Bitte lege einen schwarzen Stein und drücke dann die Taste.");
 				self.FindBestCameraSettings();
 				self.WaitTillButtonPressed(color="green");
 				newBlackStones = self.GetNewStones(color=Board.Black);
 				if (len(newBlackStones) == 0):
-					self.Speak("Ich sehe keinen neuen schwarzen Stein", wait=True);
+					self.Speak("Ich sehe keinen neuen schwarzen Stein",);
 				else:
 					if (len(newBlackStones) == 1):
 						for stone in newBlackStones:
 							self._board.SetField(stone[0],stone[1],Board.Black);
 							fieldAz = self._board.XyToAz(stone[0],stone[1]);
 							self._gnuGo.PlayerPlayBlack(fieldAz);
-							self.Speak("Ein interessanter Zug.", wait=False);
+							self.Speak("Ein interessanter Zug.",);
 							whiteToPlay = True;
 					else:
-						self.Speak("Ich sehe " + str(len(newBlackStones)) + " statt einem neuen schwarzen Stein", wait=True);
+						self.Speak("Ich sehe " + str(len(newBlackStones)) + " statt einem neuen schwarzen Stein");
 
 	def Release(self):
 		if (self._released == False):
@@ -494,31 +497,22 @@ if __name__ == "__main__":
 	#bot.MoveToXY(500,500);
 	#time.sleep(10000);
 	
-	bot.PlayWhiteGame();
+	#bot.PlayWhiteGame();
 	
 	#bot.StoreAllWhiteStones();
 	
 	if (False):
-		bot._speech.Speak("Hallo")
-		while (bot._speech.speaking==True):
-				time.sleep(1)
-		bot._speech.Speak("Möchtest Du eine Partie go mit mir spielen?");
-		while (bot._speech.speaking==True):
-				time.sleep(1)
-		bot._speech.Speak("Ich habe eine Spielstärke von etwa 5 kyu.")
-		while (bot._speech.speaking==True):
-				time.sleep(1)
-		
-	
+		bot.Speak("Hallo")
+		bot.Speak("Möchtest Du eine Partie go mit mir spielen?");
+		bot.Speak("Ich habe eine Spielstärke von etwa 5 kyu.")
+		#for i in range(1,1000):
+		#	bot._leds.NeutralAndBlink();
+		#	time.sleep(0.1);
+
 	if (False):	
 		for i in range(0,9):
 			bot.GrabStoneFromStorage();
 			bot.PutStoneToFieldPos(i,i);
-
-		
-	
-	
-	
 	
 	#ended = False;
 	

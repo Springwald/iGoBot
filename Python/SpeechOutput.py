@@ -41,21 +41,33 @@ class SpeechOutput():
 
 	_released					= False;
 	_soundcard					= None;
+	_aplay_process				= None;
 
-	def __init__(self, soundcard=""):  # soundCard="plughw:1" for Soundcard 1
+	def __init__(self, soundcard="sysdefault", voice="-vde"):  
+		# soundCard: "plughw:1" for Soundcard 1; "sysdefault" for standard soundcard
+		# voice: "-vde" for german robotic; "-vmb-de2", for german male
 		self._soundcard = soundcard;
+		self._voice = voice;
 		print("speech init")
+		
+	def IsSpeaking(self):
+		if (self._aplay_process != None):
+			if (self._aplay_process.poll() == None):
+				return True
+		self._aplay_process = None;
+		return False;
+		
+	def WaitWhileSpeaking(self):
+		while(self.IsSpeaking()):
+			time.sleep(0.1);
 
-	def Speak(self, content, wait=False):
+	def Speak(self, content, wait=True):
 		print("SPEAK: ", content);
-		#espeak_process = subprocess.Popen(["espeak", "-vde", "-s130", content, "--stdout"], stdout=subprocess.PIPE) # robotic speech
-		espeak_process = subprocess.Popen(["espeak", "-vmb-de2", "-s140", content, "--stdout"], stdout=subprocess.PIPE) # more human speech
-
+		espeak_process = subprocess.Popen(["espeak", self._voice, "-s140", content, "--stdout"], stdout=subprocess.PIPE) 
+		self._aplay_process = subprocess.Popen(["aplay", "-D", self._soundcard], stdin=espeak_process.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 		if (wait==True):
-			aplay_process = subprocess.call(["aplay", "-D", self._soundcard], stdin=espeak_process.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL) 
-		else:
-			aplay_process = subprocess.Popen(["aplay", "-D", self._soundcard], stdin=espeak_process.stdout, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-			
+			self.WaitWhileSpeaking();
+
 	def Release(self):
 		if (self._released == False):
 			self._released = True;
@@ -75,17 +87,17 @@ if __name__ == "__main__":
 		
 	pygame.init()
 	
-	speechOut = SpeechOutput(soundcard="plughw:1") 
+	speechOut = SpeechOutput(soundcard="plughw:1", voice="-vmb-de2"); 
 	
 	atexit.register(exit_handler)
+	
+	#speechOut.Speak2("Hallo")
 	
 	speechOut.Speak("Hallo", wait=False)
 	time.sleep(3);
 	speechOut.Speak("Möchtest Du eine Partie go mit mir spielen?", wait=True);
 	speechOut.Speak("Ich habe eine Spielstärke von etwa 5 kyu.", wait=True)
-
-	#speechOut.Speak("Hui")
-	time.sleep(0.5);
+	speechOut.Speak("Hui")
 	
 	#start_new_thread(speechOut.UpdateEndless(),())
 	
@@ -94,5 +106,5 @@ if __name__ == "__main__":
 	#	time.sleep(2)
 	#	print("run")
 
-	speechOut.ended = True
+	#speechOut.ended = True
 	

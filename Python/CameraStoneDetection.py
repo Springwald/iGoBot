@@ -56,6 +56,8 @@ class CameraStoneDetection():
 	_cascadeBlack				= None
 	_cascadeWhite				= None
 	
+	_useGrayscale				 = True;
+	
 	__cameraResolutionX 		= 640*2
 	__cameraResolutionY 		= 480*2
 	
@@ -105,7 +107,6 @@ class CameraStoneDetection():
 			
 	def InitCamera(self):
 		print("camera start")
-		
 
 		cv2.destroyAllWindows()
 		cv2.namedWindow(self._windowName, cv2.WINDOW_NORMAL)
@@ -115,8 +116,8 @@ class CameraStoneDetection():
 		self._camera = PiCamera()
 		self._camera.resolution = (self.__cameraResolutionX, self.__cameraResolutionY)
 		self.SetCameraSettings(settingsNo=0);
-		self._camera.contrast = 50;
-		self._camera.brightness = 50;
+		#self._camera.contrast = 50;
+		#self._camera.brightness = 50;
 		self._camera.framerate = 12
 		self._rawCapture = PiRGBArray(self._camera, size=(self.__cameraResolutionX, self.__cameraResolutionY))
 		#self._stream = self._camera.capture_continuous(self._rawCapture, format="bgr", use_video_port=True)
@@ -124,8 +125,12 @@ class CameraStoneDetection():
 		# allow the camera to warmup
 		time.sleep(0.2)
 		
-		cascade_black_fn =  "stoneDetection/black-cascade.xml"
-		cascade_white_fn =  "stoneDetection/white-cascade.xml"
+		if (self._useGrayscale):
+			cascade_black_fn =  "stoneDetection/black-cascade-grayscale.xml"
+			cascade_white_fn =  "stoneDetection/white-cascade-grayscale.xml"
+		else:
+			cascade_black_fn =  "stoneDetection/black-cascade.xml"
+			cascade_white_fn =  "stoneDetection/white-cascade.xml"
 		self._cascadeBlack = cv2.CascadeClassifier(cascade_black_fn)
 		self._cascadeWhite = cv2.CascadeClassifier(cascade_white_fn)
 
@@ -150,7 +155,10 @@ class CameraStoneDetection():
 			# preparation for the next frame
 			#image = f.array
 			image = self._rawCapture.array
-			#self._actualFrame = image
+			rawImage = image
+			if (self._useGrayscale):
+				image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+			#self_actualFrame = image
 			self._rawCapture.truncate(0)
 			
 			self.RectsBlack = self.detect(image, self._cascadeBlack)
@@ -158,10 +166,10 @@ class CameraStoneDetection():
 
 			if (self._showImage==True):
 				key = cv2.waitKey(1) & 0xFF
-				self.draw_rects(image, self.RectsBlack, (0, 0, 0))
-				self.draw_rects(image, self.RectsWhite, (255, 255, 255))
-				cv2.putText(image, str(self._counter), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
-				cv2.imshow(self._windowName, image)
+				self.draw_rects(rawImage, self.RectsBlack, (0, 0, 0))
+				self.draw_rects(rawImage, self.RectsWhite, (255, 255, 255))
+				cv2.putText(rawImage, str(self._counter), (10,50), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255))
+				cv2.imshow(self._windowName, rawImage)
 
 			# if the thread indicator variable is set, stop the thread
 			# and resource camera resources
@@ -192,6 +200,10 @@ def exit_handler():
 	testCamera.Release()
 
 if __name__ == '__main__':
+
+	from hardware.Light import Light;
+	light = Light();
+	light.On();
 
 	testCamera = CameraStoneDetection();
 	setting = 0;

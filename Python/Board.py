@@ -122,10 +122,13 @@ class Board():
 	#ensures that this is a list of [[x,y],[x,y]] and not like ["A1","G2]
 		result = [];
 		for stone in stones:
-			if (len(stone)==2):
+			#print(">>>1>>>", stone);
+			if (isinstance(stone, str)):
+				#print(">>>2>>>", Board.AzToXy(stone));
+				result.extend([Board.AzToXy(stone)])
+			else:
+				#print(">>>3>>>", stones);
 				return stones; # already [x,y] format
-			elif (len(stong)==1):
-				result.extend(Board.AzToXy(stone))
 		return result;
 
 	@staticmethod

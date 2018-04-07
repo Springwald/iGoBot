@@ -34,14 +34,18 @@ from os.path import splitext
 import os
 import time
 from subprocess import Popen, PIPE, STDOUT
+from Board import Board
+
 
 class GnuGoRemote():
 
-	_cmdCount = 0;
-	_released = False;
+	_cmdCount 		= 0;
+	_boardSize 		= 0;
+	_released 		= False;
 
 	def __init__(self, boardSize):
 		self._cmdCount = 0;
+		self._boardSize = boardSize;
 		print ("GnuGoRemote - board size: ", boardSize)
 		
 		cmd = "/usr/games/gnugo"
@@ -65,7 +69,10 @@ class GnuGoRemote():
 		stone = self.SendGnuGoCommand('genmove white')
 		print("gnuGo: AI put white on ", stone);
 		return stone;
-		
+	
+	def GetActualBoard(self):
+		return Board.FromStones(boardSize=self._boardSize,  blackStones=self.ListBlackStones(), whiteStones=self.ListWhiteStones());
+
 	def ListBlackStones(self):
 		stones = self.SendGnuGoCommand('list_stones black');
 		return stones.split(' ');
@@ -116,9 +123,9 @@ if __name__ == "__main__":
 	atexit.register(exit_handler)
 	
 	print(gnuGo.PlayerPlayBlack("A1"));
-	print(gnuGo.PlayerPlayBlack("I1"));
+	print(gnuGo.PlayerPlayBlack("J1"));
 	print(gnuGo.PlayerPlayBlack("A8"));
-	print(gnuGo.PlayerPlayBlack("I7"));
+	print(gnuGo.PlayerPlayBlack("J7"));
 	print("-" + gnuGo.AiPlayWhite() + "-");
 	print(gnuGo.PlayerPlayBlack("C3"));
 	print("-" + gnuGo.AiPlayWhite() + "-");
@@ -129,6 +136,10 @@ if __name__ == "__main__":
 	
 	print("black:" ,gnuGo.ListBlackStones());
 	print("white:", gnuGo.ListWhiteStones());
+	
+	from Board import Board;
+	board = gnuGo.GetActualBoard();
+	board.Print();
 	
 	#print(gnuGo.SendGnuGoCommand('genmove white'));
 #	print(gnuGo.SendGnuGoCommand('genmove black'));

@@ -35,7 +35,7 @@ class Light():
 	
 	_groveRelaisPort = 8;
 	
-	def __init__(self, groveRelaisDigitalPort):
+	def __init__(self, groveRelaisDigitalPort=8):
 		self._grovePort = groveRelaisDigitalPort
 		grovepi.pinMode(self._groveRelaisPort, "OUTPUT")
 

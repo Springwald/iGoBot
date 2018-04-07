@@ -62,8 +62,8 @@ class BoardDetectionCalibration():
 	_calBottomRight				= None;
 	_calBottomLeft 				= None;
 	
-	BlackStoneCoords = []; # [[x,y],[x,y]...]
-	WhiteStoneCoords = []; # [[x,y],[x,y]...]
+	BlackStones 				= []; # [[x,y],[x,y]...]
+	WhiteStones 				= []; # [[x,y],[x,y]...]
 	
 	def __init__(self, cameraStoneDetection, boardSize):
 		self._boardSize = boardSize;
@@ -81,19 +81,21 @@ class BoardDetectionCalibration():
 		self._cameraStoneDetection.Update();
 		if (self.IsCalibrated() == False):
 			print("BoardDetectionCalibration.Update: not calibrated yet");
-			self.BlackStoneCoords = [];
-			self.WhiteStoneCoords = [];
+			self.BlackStones = [];
+			self.WhiteStones = [];
 			return;
 		
 		blackStones = self.FilterToTolerance(self._cameraStoneDetection.RectsBlack, self._averageSize);
 		blackCenters = self.StonesToCenters(blackStones);
-		self.BlackStoneCoords = self.GetBoardKoordinates(blackCenters);
+		blackCoordinates = self._getBoardCoordinates(blackCenters);
+		self.BlackStones = self._toBoardFields(blackCoordinates);
 		
 		whiteStones = self.FilterToTolerance(self._cameraStoneDetection.RectsWhite, self._averageSize);
 		whiteCenters = self.StonesToCenters(whiteStones);
-		self.WhiteStoneCoords = self.GetBoardKoordinates(whiteCenters);
+		whiteCoordinates = self._getBoardCoordinates(whiteCenters);
+		self.WhiteStones = self._toBoardFields(whiteCoordinates);
 		
-	def GetBoardKoordinates(self, centers):
+	def _getBoardCoordinates(self, centers):
 		if (centers == None):
 			return [];
 		if (len(centers)==0):
@@ -102,7 +104,7 @@ class BoardDetectionCalibration():
 		#print ("GetBoardKoordinates| all:" + str(len(centers)) + " > inside board:"  +str(len(onlyInsideBoard)));
 		return onlyInsideBoard
 		
-	def ToBoardFields(self, centerPoints):
+	def _toBoardFields(self, centerPoints):
 		result = [];
 		for cX, cY in centerPoints:
 			y = 0;
@@ -278,20 +280,33 @@ class BoardDetectionCalibration():
 
 if __name__ == '__main__':
 	
+	boardSize = 9;
+	
 	camera = CameraStoneDetection();
-	boardDetCalib = BoardDetectionCalibration(camera, boardSize=13);
-
-	#time.sleep(4)
+	boardDetCalib = BoardDetectionCalibration(camera, boardSize=boardSize)
+	
+	from hardware.Light import Light;
+	light = Light();
+	light.On();
+	
+	
+	from Board import Board;
+	
+	firstBoard = None;
 
 	while(True):
 		if (boardDetCalib.IsCalibrated()==True):
 			boardDetCalib.Update();
-			blackCoords = boardDetCalib.BlackStoneCoords;
-			#print (blackCoords);
-			blackFields= boardDetCalib.ToBoardFields(blackCoords);
-			#print (blackFields);
-			blackAZ = boardDetCalib.FieldsToAZNotation(blackFields);
-			print (blackAZ);
+			blackStones = boardDetCalib.BlackStones;
+			whiteStones = boardDetCalib.WhiteStones;
+
+			board = Board.FromStones(boardSize=boardSize, blackStones=blackStones, whiteStones=whiteStones);
+			if (firstBoard == None):
+				firstBoard = board;
+			else:
+				diff = Board.Differences(firstBoard, board);
+				print(diff);	
+			board.Print();
 		else:
 			boardDetCalib.Calibrate();
 		#time.sleep(0.1)

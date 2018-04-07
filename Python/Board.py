@@ -63,14 +63,14 @@ class Board():
 		self._boardSize = boardSize;
 		
 		if (boardSize == 13):
-			print("Board: size " , boardSize, "x", boardSize);
+			#print("Board: size " , boardSize, "x", boardSize);
 			self.StepperMinX = self._13x13_xMin;
 			self.StepperMaxX = self._13x13_xMax
 			self.StepperMinY = self._13x13_yMin;
 			self.StepperMaxY = self._13x13_yMax;
 		else:
 			if (boardSize == 9):
-				print("Board: size " , boardSize, "x", boardSize);
+				#print("Board: size " , boardSize, "x", boardSize);
 				self.StepperMinX = self._9x9_xMin;
 				self.StepperMaxX = self._9x9_xMax
 				self.StepperMinY = self._9x9_yMin;
@@ -81,14 +81,63 @@ class Board():
 		# init board dimensions with 0 values (0=empty, 1=black, 2= white)
 		self._fields =  [[0 for i in range(boardSize)] for j in range(boardSize)]
 		
+	@staticmethod
+	def FromStones(boardSize, blackStones, whiteStones):
+	# create a new board and fill it with the given black and white stones
+		board = Board(boardSize)
+		for black in Board.EnsureXyNotation(blackStones):
+			board.SetField(black[0],black[1],Board.Black);
+		for white in Board.EnsureXyNotation(whiteStones):
+			board.SetField(white[0],white[1],Board.White);
+		return board;
+	
+	@staticmethod
+	def Differences(board1, board2):
+	# find all coordinates, where the second board is other 
+		if (board1 == None): throw ("board1 == None");
+		if (board2 == None): throw ("board2 == None");
+		if (board1._boardSize != board2._boardSize): throw ("different board sizes: " , board1._boardSize, " vs. ", board2._boardSize);
+		result = [];
+		for x in range(0, board1._boardSize):
+			for y in range(0, board1._boardSize):
+				if (board1.GetField(x,y) != board2.GetField(x,y)):
+					result.extend([[x,y]])
+		return result;
+		
+	def RemovedStones(board1, board2):
+	# find all coordinates, where the stones from board1 are not on board2
+		if (board1 == None): throw ("board1 == None");
+		if (board2 == None): throw ("board2 == None");
+		if (board1._boardSize != board2._boardSize): throw ("different board sizes: " , board1._boardSize, " vs. ", board2._boardSize);
+		result = [];
+		for x in range(0, board1._boardSize):
+			for y in range(0, board1._boardSize):
+				if (board1.GetField(x,y) != Board.Empty):
+					if (board2.GetField(x,y) == Board.Empty):
+						result.extend([[x,y]])
+		return result;
+
+	@staticmethod
+	def EnsureXyNotation(stones):
+	#ensures that this is a list of [[x,y],[x,y]] and not like ["A1","G2]
+		result = [];
+		for stone in stones:
+			if (len(stone)==2):
+				return stones; # already [x,y] format
+			elif (len(stong)==1):
+				result.extend(Board.AzToXy(stone))
+		return result;
+
+	@staticmethod
+	def XyToAz(x,y):
 	# converts x=1,y=2 to A1
-	def XyToAz(self, x,y):
 		if (x > 7):
 			x=x+1; # i is not defined, jump to j
 		return chr(65+x)+str(y+1);
-		
+
+	@staticmethod
+	def AzToXy(azNotation):
 	# converts A1 to [0,0]
-	def AzToXy(self, azNotation):
 		if (len(azNotation) != 2 and len(azNotation) != 3):
 			print ("board.AzToXy for '" + azNotation + "' is not exact 2-3 chars long");
 			return None;
@@ -98,6 +147,20 @@ class Board():
 		y = int(azNotation[1:])-1;
 		return [x,y]
 		
+	def Print(self):
+	# draw the board to console
+		for y in range(0, self._boardSize):
+			line = "";
+			for x in range(0, self._boardSize):
+				stone = self.GetField(x,y);
+				if (stone==0):
+					line = line + "."
+				elif (stone==Board.Black):
+					line = line + "*";
+				elif (stone==Board.White):
+					line = line + "O";
+			print(line);
+
 	def GetField(self,x,y):
 		return self._fields[x][y];
 		
@@ -122,13 +185,19 @@ if __name__ == '__main__':
 	
 	board  = Board(13)
 	print (board._fields)
-	print (board.AzToXy("A1"))
+	print (Board.AzToXy("A1"))
 	board.SetField(0,0,board.Black);
+	board.SetField(12,12,board.Black);
 	print(board.GetField(0,0));
 	print(board.GetField(0,0) == board.Black);
 	
 	for x in range(0,13):
 		f = board.XyToAz(x,x);
-		print([x,x],f, board.AzToXy(f));
+		print([x,x],f, Board.AzToXy(f));
+		
+	board2 = Board.FromStones(boardSize=13, blackStones=[[0,0],[1,1]], whiteStones=[[2,0],[2,1]]);
+	board2.Print();
+	print(Board.Differences(board,board2));
+	print(Board.RemovedStones(board,board2));
 	
 	

@@ -268,6 +268,7 @@ class iGoBot:
 		self.PutStoneToBoard();
 		
 	def Speak(self, sentence):
+		print(">>>>>>" ,sentence);
 		self._speech.Speak(sentence, wait=False);
 		while(self._speech.IsSpeaking()):
 			self._leds.Speak();
@@ -285,8 +286,7 @@ class iGoBot:
 			# check camera detection of white stones
 			self.UpdateMotors();
 			self._cameraStoneDetection.Update();
-			whiteStonesCoords = self._cameraStoneDetection.WhiteStoneCoords;
-			whiteStones = self._cameraStoneDetection.ToBoardFields(whiteStonesCoords)
+			whiteStones = self._cameraStoneDetection.WhiteStones
 			if (len(whiteStones) > 0):
 				# there are still white stones
 				tries = 0;
@@ -324,18 +324,17 @@ class iGoBot:
 			if (not self._switches.getBit(bit=16)):
 				pressed = False;
 		self._leds.NeutralFace();
-		self._leds.clearButton();
+		self._leds.ClearButton();
 
 	def GetNewStones(self, color=Board.Black):
 		self.MoveOutOfCameraSight();
 		for i in range(1,6):
 			self._cameraStoneDetection.Update();
 		if (color==Board.Black):
-			coords = self._cameraStoneDetection.BlackStoneCoords;
+			stones = self._cameraStoneDetection.BlackStones;
 		else:
-			coords = self._cameraStoneDetection.WhiteStoneCoords;
-		stones = self._cameraStoneDetection.ToBoardFields(coords)
-		newStones = self._board.GetNewStones(stones,color);
+			stones = self._cameraStoneDetection.WhiteStones;
+		newStones = self._board.GetNewStones(stones, color);
 		return newStones;
 
 	def ClearBoard(self):
@@ -360,32 +359,40 @@ class iGoBot:
 		successfulDropped = False;
 		
 		self.FindBestCameraSettings();
-		
+
 		while(successfulDropped == False):
 
 			bot.GrabStoneFromStorage();
 			bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
-
-			# check if stone really reached board
-			newWhiteStones = self.GetNewStones(color=Board.White);
-			if (len(newWhiteStones)==1):
-				if (newWhiteStones[0] == xyPos):
-					successfulDropped = True;
+			
+			newStoneDetectionSuccessfull = False;
+			while(newStoneDetectionSuccessfull == False):
+				
+				# check if stone really reached board
+				newWhiteStones = self.GetNewStones(color=Board.White);
+				if (len(newWhiteStones)==1):
+					if (newWhiteStones[0] == xyPos):
+						successfulDropped = True;
+						newStoneDetectionSuccessfull = True;
+					else:
+						self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.");
+						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
+						self.Speak("Einen Augenblick bitte");
+						self.FindBestCameraSettings(ignoreStones[xyPos]);
+						newStoneDetectionSuccessfull = False;
 				else:
-					self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.");
-					self.Speak("Ich versuche, meine Kamera neu einzustellen.");
-					self.Speak("Einen Augenblick bitte");
-			else:
-				if (len(newWhiteStones)==0):
-					# set stone ist missing
-					self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist",);
-					self.Speak("Ich versuche es noch einmal");
-				else:
-					# more than 1 new stone detectec. re-set camera
-					self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.");
-					self.Speak("Ich versuche, meine Kamera neu einzustellen.");
-					self.Speak("Einen Augenblick bitte");
-					self.FindBestCameraSettings(ignoreStones[xyPos]);
+					if (len(newWhiteStones)==0):
+						# set stone ist missing
+						self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist",);
+						self.Speak("Ich versuche es noch einmal");
+						newStoneDetectionSuccessfull = True;
+					else:
+						# more than 1 new stone detectec. re-set camera
+						self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.");
+						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
+						self.Speak("Einen Augenblick bitte");
+						self.FindBestCameraSettings(ignoreStones[xyPos]);
+						newStoneDetectionSuccessfull = False;
 
 		self._board.SetField(xyPos[0],xyPos[1],Board.White);
 		return True;
@@ -497,7 +504,7 @@ if __name__ == "__main__":
 	#bot.MoveToXY(500,500);
 	#time.sleep(10000);
 	
-	#bot.PlayWhiteGame();
+	bot.PlayWhiteGame();
 	
 	#bot.StoreAllWhiteStones();
 	

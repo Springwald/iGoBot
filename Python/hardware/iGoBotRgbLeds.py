@@ -62,6 +62,11 @@ class iGoBotRgbLeds():
 		#self.colorWipe(Color(127,0,0));
 		self._leds.theaterChase(Color(127,0,0), countLed=self._buttonLedCount, startLed=self._buttonLedStart);
 		#time.sleep(0.01);
+	
+	def ClearButton(self):
+		for i in range(0, self._buttonLedCount):
+			self._leds._pixels.setPixelColor(self._buttonLedStart+i, 0)
+		self._leds._pixels.show()     
 
 	def Speak(self):
 		self._face.Speak();

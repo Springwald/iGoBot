@@ -56,7 +56,7 @@ class GripperAndDispenser():
 	_servoCount = 2;
 
 	_gripperOpen	= 340
-	_gripperClosed	= 220
+	_gripperClosed	= 200
 	
 	_dispenserGive	= 285;
 	_dispenserGrab	= 530;
@@ -124,10 +124,10 @@ class GripperAndDispenser():
 		self.allTargetsReached = allReached
 
 		if (allReached == False):
-			#self.PowerOff();
+			#self.PowerOn();
 			time.sleep(self._actualSpeedDelay);
 		
-		if (self.__last_servo_set_time + 5 < time.time()):
+		if (self.__last_servo_set_time + 1 < time.time()):
 			# long time nothing done
 			#time.sleep(0.5);
 			self.PowerOff();
@@ -183,15 +183,13 @@ class GripperAndDispenser():
 	def Release(self):
 		if (self._released == False):
 			print("releasing " + self._name)
-			#self.home()
 			self.openGripper();
 			self.dispenserGive();
 			while(self.allTargetsReached == False):
 				self.Update();
 			self._released = True
 			self.turnOff()
-			print("super().EndUpdating() " + self._name)
-			
+
 	def __del__(self):
 		self.Release()
 		
@@ -208,7 +206,7 @@ if __name__ == "__main__":
 	
 	#time.sleep(2)
 	
-	for i in range(0,5):
+	for i in range(0,0):
 		print(i)
 		tester.dispenserGrab();
 		while(tester.allTargetsReached == False):

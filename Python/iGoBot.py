@@ -51,10 +51,11 @@ from DanielsRasPiPythonLibs.speech.SpeechOutput import SpeechOutput
 
 from DanielsRasPiPythonLibs.hardware.PCF8574 import PCF8574
 from DanielsRasPiPythonLibs.hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
-from DanielsRasPiPythonLibs.hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
+#from DanielsRasPiPythonLibs.hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
 from DanielsRasPiPythonLibs.hardware.RgbLeds import RgbLeds
-from hardware.GripperAndDispenser import GripperAndDispenser
+#from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
+from hardware.Motors import Motors
 from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 
 import atexit
@@ -62,22 +63,16 @@ import atexit
 class iGoBot:
 
 	I2cIoExpanderPcf8574Adress		= 0x3e
-	_xAxisAdress					= 0x0d
-	_yAxisAdress					= 0x0e
-	_zAxisAdress					= 0x0f
-	_gripperAdress					= 0x40
+
 	_lightGrovePort					= 8
 	_soundcard						="plughw:1"
 	
 	_ended							= False
 	_released						= False
 	
-	_xAxis 							= None;
-	_yAxis 							= None;
-	_zAxis 							= None;
+	_motors							= None;
 	_light							= None;
 	_leds							= None;
-	_gripperAndDispenser			= None;
 	_speech							= None;
 	_board							= None;
 	_switches 						= None;
@@ -87,24 +82,6 @@ class iGoBot:
 	_camera							= None;
 	_cameraStoneDetection			= None;
 	
-	_xPosDropCapturedBlack			= 200;
-	_xPosDropCapturedWhite			= 4000;
-	
-	# where to move to drop the stone into the drop storage
-	_xPosStoneStorageDrop			= 4400
-	_yPosStoneStorageDrop			= 3800
-	
-	# where to move to grab a new stone from dispenser
-	_xPosStoneStorageGrab			= 4160 
-	_yPosStoneStorageGrab			= 3460
-	
-	_yPosOutOfCameraSight			= 3800
-	
-	_zPosMaxUp						= 0;
-	_zPosUp							= 400;
-	_zPosDropOnBoard				= 600;
-	_zPosOnBoard					= 635;
-	_zPosOnDispenserGrab			= 700;
 	
 	def __init__(self, boardSize=13):
 		#pygame.init()
@@ -125,172 +102,59 @@ class iGoBot:
 		self._camera = CameraStoneDetection();
 		self._board = Board(boardSize);
 		
-		self._gripperAndDispenser = GripperAndDispenser(i2cAdress=self._gripperAdress, busnum=1)
-		self._gripperAndDispenser.openGripper();
+		self._switches = I2cIoExpanderPcf8574Synchron(self.I2cIoExpanderPcf8574Adress, useAsInputs=True)
 		
-		endStop = I2cIoExpanderPcf8574Synchron(0x3e, useAsInputs=True)
-		self._switches = endStop;
-		self._zAxis = StepperMotorControlSynchron("z-axis", self._zAxisAdress, 940,   endStop,  64, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001], rampSafeArea=20)
-		self._xAxis = StepperMotorControlSynchron("x-axis", self._xAxisAdress, 4400,  endStop,  32, [0b0001, 0b0101, 0b0100, 0b0110, 0b0010, 0b1010, 0b1000, 0b1001])
-		self._yAxis = StepperMotorControlSynchron("y-axis", self._yAxisAdress, 3800,  endStop, 128, [0b1001, 0b1000, 0b1010, 0b0010, 0b0110, 0b0100, 0b0101, 0b0001])
-		self.WaitForAllMotors();
+		self._motors = Motors(self._switches);
 		
 		self._gnuGo = GnuGoRemote(boardSize=boardSize)
 		
-		self.MoveToZ(self._zPosUp);
-		
 		# move to stone storage drop
 		if (False):
-			self.DropStoneInStorage();
+			self._motors.DropStoneInStorage();
 			time.sleep(30);
 		
 		# test stone board coordinates
 		if (False):
 			#for i in [[0,0],[0,12],[12,12],[12,0]]:
 			for i in [[0,0],[0,8],[8,8],[8,0]]:
-				self.MoveToXY(self._board.GetStepperXPos(i[0]),self._board.GetStepperYPos(i[1]));
+				self._motors.MoveToXY(self._board.GetStepperXPos(i[0]),self._board.GetStepperYPos(i[1]));
 				for a in range(0,3):
-					self.TakeStoneFromBoard();
-					self.PutStoneToBoard();
+					self._motors.TakeStoneFromBoard();
+					self._motors.PutStoneToBoard();
 					time.sleep(1);
 		
 		# take stone from 0, 0 and drop it into storage
 		if (False):
-			self.MoveToXY(self._board.GetStepperXPos(0), self._board.GetStepperYPos(0));
-			self.TakeStoneFromBoard();
-			self.DropStoneInStorage();
+			self._motors.MoveToXY(self._board.GetStepperXPos(0), self._board.GetStepperYPos(0));
+			self._motors.TakeStoneFromBoard();
+			self._motors.DropStoneInStorage();
 			
-		self.MoveOutOfCameraSight();
+		self._motors.MoveOutOfCameraSight();
 		
 		# calibrate camera with 4 black and 1 white stones
 		self._cameraStoneDetection = BoardDetectionCalibration(self._camera, boardSize);
 		while(self._cameraStoneDetection.IsCalibrated()==False):
 			self._cameraStoneDetection.Calibrate();
 		return;
-		
-	def TakeStoneFromBoard(self):
-		self.MoveToZ(self._zPosUp);
-		self.OpenGripper();
-		self.MoveToZ(self._zPosOnBoard);
-		self.CloseGripper();
-		self.MoveToZ(self._zPosUp);
-		return;
-		
-	def PutStoneToBoard(self):
-		self.MoveToZ(self._zPosDropOnBoard);
-		self.OpenGripper();
-		self.MoveToZ(self._zPosUp);
-		return;
-		
-	def DropStoneInStorage(self):
-		self.MoveToZ(self._zPosMaxUp);
-		self.MoveToXY(self._xPosStoneStorageDrop, self._yPosStoneStorageDrop);
-		self.OpenGripper();
-		
+
 	def RemoveCapturedStoneFromBoard(self,x ,y):
 		stepperX = self._board.GetStepperXPos(x);
 		stepperY = self._board.GetStepperYPos(y);
-		self.MoveToXY(stepperX, stepperY);
+		self._motors.MoveToXY(stepperX, stepperY);
 		# take stone
-		self.TakeStoneFromBoard();
+		self._motors.TakeStoneFromBoard();
 		# drop left or right from board
 		if (self._board.GetField(x,y)== Board.Empty):
 			self.Speak("Fehler! Ich wollte den Stein auf " + str(x) + "/" + str(y) + " entfernen, aber dort ist laut meiner Aufzeichnung gar kein Stein.");
 			return;
-		if (self._board.GetField(x,y) == Board.Black):
-			self.MoveToX(self._xPosDropCapturedBlack);
-		else:
-			self.MoveToX(self._xPosDropCapturedWhite);
-		self.PutStoneToBoard();
+		self._motors.DropCapturedStone(self._board.GetField(x,y) == Board.Black);
 		self._board.SetField(x,y,Board.Empty);
-		
-	def GrabStoneFromStorage(self):
-		self.MoveToZ(self._zPosMaxUp); # z max up
-		self.MoveToXY(self._xPosStoneStorageGrab, self._yPosStoneStorageGrab); # go to storage grab zone
-		self._gripperAndDispenser.dispenserGrab();
-		for a in range(0,3):
-			# shuffle stone into dispenser hole
-			self._gripperAndDispenser.dispenserGrab();
-			while(self._gripperAndDispenser.allTargetsReached == False):
-				self._gripperAndDispenser.Update();
-				self.UpdateMotors();
-			self._gripperAndDispenser.dispenserGive();
-			while(self._gripperAndDispenser.allTargetsReached == False):
-				self._gripperAndDispenser.Update();
-				self.UpdateMotors();
-		self.MoveToZ(self._zPosOnDispenserGrab);
-		self.CloseGripper();
-		self.MoveToZ(self._zPosMaxUp);
-		
-	def OpenGripper(self):
-		self._gripperAndDispenser.openGripper();
-		while(self._gripperAndDispenser.allTargetsReached == False):
-			self._gripperAndDispenser.Update();
-			self.UpdateMotors();
-			if(self._speech.IsSpeaking()):
-				self._leds.Speak();
-			
-	def CloseGripper(self):
-		self._gripperAndDispenser.closeGripper();
-		while(self._gripperAndDispenser.allTargetsReached == False):
-			self._gripperAndDispenser.Update();
-			self.UpdateMotors();
-			if(self._speech.IsSpeaking()):
-				self._leds.Speak();
-	
-	# To give the motors the chance to go to sleep
-	def UpdateMotors(self):
-		self._xAxis.Update();
-		self._yAxis.Update();
-		self._zAxis.Update();
-		
-	def WaitForAllMotors(self):
-		while(self._gripperAndDispenser.allTargetsReached==False):
-			self._gripperAndDispenser.Update();
-		while(self._zAxis.targetReached==False):
-			self.UpdateMotors();
-		while(self._xAxis.targetReached==False):
-			self.UpdateMotors();
-		while(self._yAxis.targetReached==False):
-			self.UpdateMotors();
 
-	def MoveToXY(self, posX, posY):	
-		self.MoveToX(posX);
-		self.MoveToY(posY);
-
-	def MoveToX(self, pos):
-		self._xAxis.targetPos = pos;
-		self.WaitForAllMotors();
-			
-	def MoveToY(self, pos):
-		if (self._yAxis.targetPos == pos):
-			 return;
-		overdrive = 100;
-		if (self._yAxis.targetPos > pos):
-			self._yAxis.targetPos = pos - overdrive;
-		else:
-			self._yAxis.targetPos = pos + overdrive;
-		self.WaitForAllMotors();
-		self._yAxis.targetPos = pos;
-		self.WaitForAllMotors();
-		
-	def MoveToZ(self, pos):
-		self._zAxis.targetPos = pos;
-		self.WaitForAllMotors();
-		
-	def MoveOutOfCameraSight(self):
-		self.MoveToZ(self._zPosMaxUp);
-		self.MoveToY(self._yPosOutOfCameraSight);
-		
-	def TakeStoneFromPosition(self,x,y):
-		self._MoveToXY(x,y);
-		self.TakeStoneFromBoard();
-		
 	def PutStoneToFieldPos(self, fieldX, fieldY):
 		stepperX = self._board.GetStepperXPos(fieldX);
 		stepperY = self._board.GetStepperYPos(fieldY);
-		self.MoveToXY(stepperX, stepperY);
-		self.PutStoneToBoard();
+		self._motors.MoveToXY(stepperX, stepperY);
+		self._motors.PutStoneToBoard();
 		
 	def UpdateFace(self):
 		if (self._speech.IsSpeaking()):
@@ -304,6 +168,8 @@ class iGoBot:
 		if (wait):
 			while(self._speech.IsSpeaking()):
 				self.UpdateFace();
+				self._motors.UpdateMotors();
+				self._motors.UpdateGripperAndDispenser();
 				time.sleep(0.25);
 			self.UpdateFace();
 
@@ -313,10 +179,10 @@ class iGoBot:
 			tries = tries + 1;
 			
 			# move arm out of camera sight
-			self.MoveOutOfCameraSight();
+			self._motors.MoveOutOfCameraSight();
 		
 			# check camera detection of white stones
-			self.UpdateMotors();
+			self._motors.UpdateMotors();
 			self._cameraStoneDetection.Update();
 			whiteStones = self._cameraStoneDetection.WhiteStones
 			if (len(whiteStones) > 0):
@@ -327,23 +193,23 @@ class iGoBot:
 				print("found white stone on ", self._cameraStoneDetection.FieldToAZNotation(stone[0],stone[1]));
 				stepperX = self._board.GetStepperXPos(stone[0]);
 				stepperY = self._board.GetStepperYPos(stone[1]);
-				self.MoveToXY(stepperX, stepperY);
+				self._motors.MoveToXY(stepperX, stepperY);
 				# take white stone
-				self.TakeStoneFromBoard();
+				self._motors.TakeStoneFromBoard();
 				# drop stone into storage
-				self.DropStoneInStorage();
+				self._motors.DropStoneInStorage();
 			else:
 				# no more white stones
 				print("no white stone detected, try ", tries);
-				self.UpdateMotors();
+				self._motors.UpdateMotors();
 				time.sleep(1);
 			
 	def WaitTillButtonPressed(self, color="green"):
 		pressed = False;
+		self._motors.StandByAllMotors();
 		# wait till pressed
 		while(pressed == False):
-			self.UpdateMotors();
-			self._gripperAndDispenser.Update();
+			self._motors.UpdateGripperAndDispenser;
 			self._leds.AnimateButtonGreen();
 			self._leds.NeutralAndBlink();
 			if (self._switches.getBit(bit=16)):
@@ -351,16 +217,16 @@ class iGoBot:
 			self.UpdateFace();
 		# wait till released
 		while(pressed == True):
-			self.UpdateMotors();
-			self._gripperAndDispenser.Update();
+			self._motors.UpdateGripperAndDispenser;
 			self._leds.AnimateButtonGreen();
 			if (not self._switches.getBit(bit=16)):
 				pressed = False;
 		self.UpdateFace();
 		self._leds.ClearButton();
+		self._motors.WakeUpAllMotors();
 
 	def GetNewStones(self, color=Board.Black):
-		self.MoveOutOfCameraSight();
+		self._motors.MoveOutOfCameraSight();
 		for i in range(1,2):
 			self._cameraStoneDetection.Update();
 		if (color==Board.Black):
@@ -386,7 +252,6 @@ class iGoBot:
 				self.RemoveCapturedStoneFromBoard(stone[0],stone[1]);
 
 	def PlayAiStone(self,white=True):
-
 		field = self._gnuGo.AiPlayWhite();
 		self.UpdateFace();
 		if (field==None):
@@ -394,7 +259,7 @@ class iGoBot:
 			return False;
 		if (field=="PASS"):
 			self.Speak("Ich passe!", wait=False);
-			return;
+			return True;
 		xyPos = self._board.AzToXy(field);
 		print ("white AI stone to:", xyPos);
 		successfulDropped = False;
@@ -403,7 +268,7 @@ class iGoBot:
 
 		while(successfulDropped == False):
 
-			bot.GrabStoneFromStorage();
+			bot._motors.GrabStoneFromStorage();
 			bot.PutStoneToFieldPos(xyPos[0],xyPos[1]);
 			
 			newStoneDetectionSuccessfull = False;
@@ -427,8 +292,8 @@ class iGoBot:
 						self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist",);
 						self.Speak("Ich versuche es noch einmal", wait=False);
 						# recalibreate y-axis
-						self.MoveToY(500);
-						self._yAxis.calibrateHome();
+						self._motors.MoveToY(500);
+						self._motors._yAxis.calibrateHome();
 						newStoneDetectionSuccessfull = True;
 					else:
 						# more than 1 new stone detectec. re-set camera
@@ -448,7 +313,8 @@ class iGoBot:
 		self.WaitTillButtonPressed(color="green");
 		
 		# detect handycap stones
-		self.UpdateMotors();
+		self._motors.UpdateMotors();
+		self._motors.UpdateGripperAndDispenser();
 		handicapStones = self.GetNewStones(color=Board.Black);
 
 		if (len(handicapStones) == 0):
@@ -476,7 +342,7 @@ class iGoBot:
 					whiteToPlay = False;
 					roundNo = roundNo+1;
 			else:
-				self.MoveOutOfCameraSight();
+				self._motors.MoveOutOfCameraSight();
 				self.Speak("Du bist am Zug.", wait=False);
 				if (roundNo < 3):
 					self.Speak("Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
@@ -517,18 +383,6 @@ class iGoBot:
 			if (self._camera != None):
 				self._camera.Release();
 
-			if (self._zAxis != None):
-				self.MoveToZ(0);
-				self._zAxis.Release()
-			
-			if (self._xAxis != None):
-				self.MoveToX(0);
-				self._xAxis.Release()
-
-			if (self._yAxis != None):
-				self.MoveToY(0);
-				self._yAxis.Release()
-				
 			if (self._light != None):
 				self._light.Off();
 				self._light.Release();
@@ -539,12 +393,9 @@ class iGoBot:
 			if (self._speech != None):
 				self._speech.Release();
 				
-			if (self._gripperAndDispenser != None):
-				self._gripperAndDispenser.openGripper();
-				while(self._gripperAndDispenser.allTargetsReached == False):
-					self._gripperAndDispenser.Update();
-				self._gripperAndDispenser.Release();
-			
+			if (self._motors != None):
+				self._motors.Release()
+
 			if (self._gnuGo != None):
 				self._gnuGo.Release();
 
@@ -581,8 +432,8 @@ if __name__ == "__main__":
 
 	if (False):	
 		for i in range(0,9):
-			bot.GrabStoneFromStorage();
-			bot.PutStoneToFieldPos(i,i);
+			bot._motors.GrabStoneFromStorage();
+			bot._motors.PutStoneToFieldPos(i,i);
 	
 	#ended = False;
 	

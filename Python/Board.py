@@ -85,10 +85,12 @@ class Board():
 	def FromStones(boardSize, blackStones, whiteStones):
 	# create a new board and fill it with the given black and white stones
 		board = Board(boardSize)
-		for black in Board.EnsureXyNotation(blackStones):
-			board.SetField(black[0],black[1],Board.Black);
-		for white in Board.EnsureXyNotation(whiteStones):
-			board.SetField(white[0],white[1],Board.White);
+		if (blackStones != None and len(blackStones) > 0 and blackStones[0] != ''):
+			for black in Board.EnsureXyNotation(blackStones):
+				board.SetField(black[0],black[1],Board.Black);
+		if (whiteStones != None and len(whiteStones) > 0 and whiteStones[0] != ''):
+			for white in Board.EnsureXyNotation(whiteStones):
+				board.SetField(white[0],white[1],Board.White);
 		return board;
 	
 	@staticmethod
@@ -123,7 +125,7 @@ class Board():
 		result = [];
 		for stone in stones:
 			#print(">>>1>>>", stone);
-			if (isinstance(stone, str)):
+			if (isinstance(stone, str) and stone !=''):
 				#print(">>>2>>>", Board.AzToXy(stone));
 				result.extend([Board.AzToXy(stone)])
 			else:

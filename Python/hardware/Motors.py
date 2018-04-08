@@ -116,7 +116,7 @@ class Motors:
 	def StandByAllMotors(self):
 		self._xAxis.StandBy();
 		self._yAxis.StandBy();
-		self._zAxis.StandBy();
+		#self._zAxis.StandBy();
 
 	def WakeUpAllMotors(self):
 		self._xAxis.EndStandBy();

@@ -240,7 +240,7 @@ class iGoBot:
 		self._gnuGo.ClearBoard();
 		self._board = Board(self._board._boardSize);
 		
-	def FindBestCameraSettings(ignoreStones=[]): # ignoreStones are xy of stones, we don´t know, if they are really on the board. Like the last robot set stone.
+	def FindBestCameraSettings(self, ignoreStones=[]): # ignoreStones are xy of stones, we don´t know, if they are really on the board. Like the last robot set stone.
 		# find out the camera setting where all stones on the board are detected correct
 		return;
 
@@ -284,7 +284,7 @@ class iGoBot:
 						self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.");
 						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
 						self.Speak("Einen Augenblick bitte", wait=False);
-						self.FindBestCameraSettings(ignoreStones[xyPos]);
+						self.FindBestCameraSettings(ignoreStones=[xyPos]);
 						newStoneDetectionSuccessfull = False;
 				else:
 					if (len(newWhiteStones)==0):
@@ -300,7 +300,7 @@ class iGoBot:
 						self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.");
 						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
 						self.Speak("Einen Augenblick bitte", wait=False);
-						self.FindBestCameraSettings(ignoreStones[xyPos]);
+						self.FindBestCameraSettings(ignoreStones=[xyPos]);
 						newStoneDetectionSuccessfull = False;
 
 		self._board.SetField(xyPos[0],xyPos[1],Board.White);

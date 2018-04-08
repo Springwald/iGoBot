@@ -9,6 +9,8 @@ iGoBot - a GO game playing robot
                                
 Project website: [http://www.springwald.de/hi/igobot](http://www.springwald.de/hi/igobot)
 
+![](preview/putstone.gif)
+
 Licensed under MIT License (MIT)
 
 Copyright (c) 2018 Daniel Springwald | daniel@springwald.de

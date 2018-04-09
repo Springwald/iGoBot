@@ -75,12 +75,14 @@ class GnuGoRemote():
 
 	def ListBlackStones(self):
 		stones = self.SendGnuGoCommand('list_stones black');
-		if (stones == '') return [];
+		if (stones == ''):
+			return [];
 		return stones.split(' ');
 
 	def ListWhiteStones(self):
 		stones = self.SendGnuGoCommand('list_stones white');
-		if (stones == '') return [];
+		if (stones == ''):
+			return [];
 		return stones.split(' ');
 	
 	def SendGnuGoCommand(self, command):

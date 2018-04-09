@@ -109,7 +109,12 @@ class iGoBot:
 		
 		self._leds = iGoBotRgbLeds();
 		
-		self._speech = SpeechOutput(soundcard=self._soundcard, voice="-vmb-de2");
+		if (englishSpeech==True):
+			self._speech = SpeechOutput(soundcard=self._soundcard, voice="-ven");
+		else:
+			self._speech = SpeechOutput(soundcard=self._soundcard, voice="-vmb-de2");
+			
+		self._speech.Speak("this is a test!");
 		
 		self._camera = CameraStoneDetection();
 		self._board = Board(boardSize);

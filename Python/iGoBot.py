@@ -145,7 +145,7 @@ class iGoBot:
 		self._motors.TakeStoneFromBoard();
 		# drop left or right from board
 		if (self._board.GetField(x,y)== Board.Empty):
-			self.Speak("Fehler! Ich wollte den Stein auf " + str(x) + "/" + str(y) + " entfernen, aber dort ist laut meiner Aufzeichnung gar kein Stein.");
+			self.Speak("Fehler! Ich wollte den Stein auf {x}/{y} entfernen, aber dort ist laut meiner Aufzeichnung gar kein Stein.".format(x=x,y=y));
 			return;
 		self._motors.DropCapturedStone(self._board.GetField(x,y) == Board.Black);
 		self._board.SetField(x,y,Board.Empty);
@@ -190,7 +190,7 @@ class iGoBot:
 				tries = 0;
 				# move to first white stone
 				stone = whiteStones[0];
-				print("found white stone on ", self._cameraStoneDetection.FieldToAZNotation(stone[0],stone[1]));
+				print("found white stone on {field}".format(field=self._cameraStoneDetection.FieldToAZNotation(stone[0],stone[1])));
 				stepperX = self._board.GetStepperXPos(stone[0]);
 				stepperY = self._board.GetStepperYPos(stone[1]);
 				self._motors.MoveToXY(stepperX, stepperY);
@@ -200,7 +200,7 @@ class iGoBot:
 				self._motors.DropStoneInStorage();
 			else:
 				# no more white stones
-				print("no white stone detected, try ", tries);
+				print("no white stone detected, try {tries}".format(tries=tries));
 				self._motors.UpdateMotors();
 				time.sleep(1);
 			
@@ -247,7 +247,7 @@ class iGoBot:
 	def RemoveCapturesStonesFromBoard(self):
 		removed = Board.RemovedStones(self._board, self._gnuGo.GetActualBoard());
 		if (len(removed) > 0):
-			self.Speak("Ich nehme nun " + str(len(removed)) + " Steine vom Brett", wait=False);
+			self.Speak("Ich nehme nun {count} Steine vom Brett".format(count=len(removed)), wait=False);
 			for stone in removed:
 				self.RemoveCapturedStoneFromBoard(stone[0],stone[1]);
 
@@ -297,7 +297,7 @@ class iGoBot:
 						newStoneDetectionSuccessfull = True;
 					else:
 						# more than 1 new stone detectec. re-set camera
-						self.Speak("Oh, ich erkenne " + str(len(newWhiteStones)) + " neue weiße Steine.");
+						self.Speak("Oh, ich erkenne {count} neue weiße Steine.".format(count=len(newWhiteStones)));
 						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
 						self.Speak("Einen Augenblick bitte", wait=False);
 						self.FindBestCameraSettings(ignoreStones=[xyPos]);
@@ -321,11 +321,11 @@ class iGoBot:
 			self.Speak("Du hast keine Vorgabe Steine gelegt.", wait=False);
 			whiteToPlay = False;
 		else:
-			self.Speak("Du hast " + str(len(handicapStones)) + " Vorgabe Steine gelegt.", wait=False);
+			self.Speak("Du hast {count} Vorgabe Steine gelegt.".format(count=len(handicapStones)), wait=False);
 			for stone in handicapStones:
 				self._board.SetField(stone[0],stone[1],Board.Black);
 				fieldAz = self._board.XyToAz(stone[0],stone[1]);
-				print ("check set black: ", self._board.GetField(stone[0],stone[1]));
+				print ("check set black: {field}".format(field=self._board.GetField(stone[0],stone[1])));
 				self._gnuGo.PlayerPlayBlack(fieldAz);
 			whiteToPlay = True;
 
@@ -368,7 +368,7 @@ class iGoBot:
 							whiteToPlay = True;
 							roundNo = roundNo+1;
 					else:
-						self.Speak("Ich sehe " + str(len(newBlackStones)) + " statt einem neuen schwarzen Stein", wait=False);
+						self.Speak("Ich sehe {count} statt einem neuen schwarzen Stein".format(count=len(newBlackStones)), wait=False);
 						
 			self.RemoveCapturesStonesFromBoard();
 

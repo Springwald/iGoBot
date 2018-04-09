@@ -58,6 +58,11 @@ from hardware.Light import Light
 from hardware.Motors import Motors
 from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 
+import gettext
+en = gettext.translation('iGoBot', localedir='locale', languages=['en'])
+#print(_('Hello! What is your name?'))  # prints Spanish
+
+
 import atexit
 
 class iGoBot:

@@ -145,7 +145,7 @@ class iGoBot:
 		self._motors.TakeStoneFromBoard();
 		# drop left or right from board
 		if (self._board.GetField(x,y)== Board.Empty):
-			self.Speak("Fehler! Ich wollte den Stein auf {x}/{y} entfernen, aber dort ist laut meiner Aufzeichnung gar kein Stein.".format(x=x,y=y));
+			self.Speak(_("Fehler! Ich wollte den Stein auf {x}/{y} entfernen, aber dort ist laut meiner Aufzeichnung gar kein Stein.").format(x=x,y=y));
 			return;
 		self._motors.DropCapturedStone(self._board.GetField(x,y) == Board.Black);
 		self._board.SetField(x,y,Board.Empty);
@@ -247,7 +247,7 @@ class iGoBot:
 	def RemoveCapturesStonesFromBoard(self):
 		removed = Board.RemovedStones(self._board, self._gnuGo.GetActualBoard());
 		if (len(removed) > 0):
-			self.Speak("Ich nehme nun {count} Steine vom Brett".format(count=len(removed)), wait=False);
+			self.Speak(_("Ich nehme nun {count} Steine vom Brett").format(count=len(removed)), wait=False);
 			for stone in removed:
 				self.RemoveCapturedStoneFromBoard(stone[0],stone[1]);
 
@@ -258,7 +258,7 @@ class iGoBot:
 			print("Error: gnuGo AI suggested no white stone?!?");
 			return False;
 		if (field=="PASS"):
-			self.Speak("Ich passe!", wait=False);
+			self.Speak(_("Ich passe!"), wait=False);
 			return True;
 		xyPos = self._board.AzToXy(field);
 		print ("white AI stone to:", xyPos);
@@ -281,25 +281,25 @@ class iGoBot:
 						successfulDropped = True;
 						newStoneDetectionSuccessfull = True;
 					else:
-						self.Speak("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt.");
-						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
-						self.Speak("Einen Augenblick bitte", wait=False);
+						self.Speak(_("Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt."));
+						self.Speak(_("Ich versuche, meine Kamera neu einzustellen."));
+						self.Speak(_("Einen Augenblick bitte"), wait=False);
 						self.FindBestCameraSettings(ignoreStones=[xyPos]);
 						newStoneDetectionSuccessfull = False;
 				else:
 					if (len(newWhiteStones)==0):
 						# set stone ist missing
-						self.Speak("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist",);
-						self.Speak("Ich versuche es noch einmal", wait=False);
+						self.Speak(_("Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  nicht leer ist"));
+						self.Speak(_("Ich versuche es noch einmal"), wait=False);
 						# recalibreate y-axis
 						self._motors.MoveToY(500);
 						self._motors._yAxis.calibrateHome();
 						newStoneDetectionSuccessfull = True;
 					else:
 						# more than 1 new stone detectec. re-set camera
-						self.Speak("Oh, ich erkenne {count} neue weiße Steine.".format(count=len(newWhiteStones)));
-						self.Speak("Ich versuche, meine Kamera neu einzustellen.");
-						self.Speak("Einen Augenblick bitte", wait=False);
+						self.Speak(_("Oh, ich erkenne {count} neue weiße Steine.").format(count=len(newWhiteStones)));
+						self.Speak(_("Ich versuche, meine Kamera neu einzustellen."));
+						self.Speak(_("Einen Augenblick bitte"), wait=False);
 						self.FindBestCameraSettings(ignoreStones=[xyPos]);
 						newStoneDetectionSuccessfull = False;
 
@@ -309,7 +309,7 @@ class iGoBot:
 	def PlayWhiteGame(self):
 		self.ClearBoard();
 		
-		self.Speak("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste.", wait=False);
+		self.Speak(_("Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die Taste."), wait=False);
 		self.WaitTillButtonPressed(color="green");
 		
 		# detect handycap stones
@@ -318,10 +318,10 @@ class iGoBot:
 		handicapStones = self.GetNewStones(color=Board.Black);
 
 		if (len(handicapStones) == 0):
-			self.Speak("Du hast keine Vorgabe Steine gelegt.", wait=False);
+			self.Speak(_("Du hast keine Vorgabe Steine gelegt."), wait=False);
 			whiteToPlay = False;
 		else:
-			self.Speak("Du hast {count} Vorgabe Steine gelegt.".format(count=len(handicapStones)), wait=False);
+			self.Speak(_("Du hast {count} Vorgabe Steine gelegt.").format(count=len(handicapStones)), wait=False);
 			for stone in handicapStones:
 				self._board.SetField(stone[0],stone[1],Board.Black);
 				fieldAz = self._board.XyToAz(stone[0],stone[1]);
@@ -335,7 +335,7 @@ class iGoBot:
 
 			if (whiteToPlay):
 				if (roundNo < 3):
-					self.Speak("Ich bin am Zug. Bitte einen Augenblick Geduld.", wait=False);
+					self.Speak(_("Ich bin am Zug. Bitte einen Augenblick Geduld."), wait=False);
 					self.UpdateFace();
 				if (self.PlayAiStone(white=True))==True:
 					self.UpdateFace();
@@ -343,14 +343,14 @@ class iGoBot:
 					roundNo = roundNo+1;
 			else:
 				self._motors.MoveOutOfCameraSight();
-				self.Speak("Du bist am Zug.", wait=False);
+				self.Speak(_("Du bist am Zug."), wait=False);
 				if (roundNo < 3):
-					self.Speak("Bitte lege einen schwarzen Stein und drücke dann die Taste.", wait=False);
+					self.Speak(_("Bitte lege einen schwarzen Stein und drücke dann die Taste."), wait=False);
 				self.FindBestCameraSettings();
 				self.WaitTillButtonPressed(color="green");
 				newBlackStones = self.GetNewStones(color=Board.Black);
 				if (len(newBlackStones) == 0):
-					self.Speak("Ich sehe keinen neuen schwarzen Stein", wait=False);
+					self.Speak(_("Ich sehe keinen neuen schwarzen Stein"), wait=False);
 				else:
 					if (len(newBlackStones) == 1):
 						for stone in newBlackStones:
@@ -360,15 +360,15 @@ class iGoBot:
 							
 							rnd = random.randrange(30);
 							if (rnd==1):
-								self.Speak("Ein interessanter Zug.",wait=False);
+								self.Speak(_("Ein interessanter Zug."),wait=False);
 							elif (rnd==2):
-								self.Speak("Wow, darauf wäre ich nicht gekommen.",wait=False);
+								self.Speak(_("Wow, darauf wäre ich nicht gekommen."),wait=False);
 							elif (rnd==3):
-								self.Speak("Ok, das ist also Dein Zug.",wait=False);
+								self.Speak(_("Ok, das ist also Dein Zug."),wait=False);
 							whiteToPlay = True;
 							roundNo = roundNo+1;
 					else:
-						self.Speak("Ich sehe {count} statt einem neuen schwarzen Stein".format(count=len(newBlackStones)), wait=False);
+						self.Speak(_("Ich sehe {count} statt einem neuen schwarzen Stein").format(count=len(newBlackStones)), wait=False);
 						
 			self.RemoveCapturesStonesFromBoard();
 
@@ -404,6 +404,8 @@ class iGoBot:
 	def __del__(self):
 		self.Release()
 		
+_ = lambda s: s
+		
 def exit_handler():
 	bot.Release()
 
@@ -423,9 +425,9 @@ if __name__ == "__main__":
 	#bot.StoreAllWhiteStones();
 	
 	if (False):
-		bot.Speak("Hallo")
-		bot.Speak("Möchtest Du eine Partie go mit mir spielen?");
-		bot.Speak("Ich habe eine Spielstärke von etwa 5 kyu.")
+		bot.Speak(_("Hallo"))
+		bot.Speak(_("Möchtest Du eine Partie go mit mir spielen?"));
+		bot.Speak(_("Ich habe eine Spielstärke von etwa 5 kyu."))
 		#for i in range(1,1000):
 		#	bot._leds.NeutralAndBlink();
 		#	time.sleep(0.1);

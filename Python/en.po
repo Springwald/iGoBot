@@ -1,0 +1,121 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2018-04-09 19:23+0200\n"
+"PO-Revision-Date: 2018-04-09 19:30+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.0.6\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: en\n"
+
+#: iGoBot.py:148
+msgid ""
+"Fehler! Ich wollte den Stein auf {x}/{y} entfernen, aber dort ist laut "
+"meiner Aufzeichnung gar kein Stein."
+msgstr ""
+"Error! I wanted to remove the stone on {x}/{y}, but according to my record "
+"there is no stone at all."
+
+#: iGoBot.py:250
+msgid "Ich nehme nun {count} Steine vom Brett"
+msgstr "I take {count} stones from the board now"
+
+#: iGoBot.py:261
+msgid "Ich passe!"
+msgstr "I'll pass!"
+
+#: iGoBot.py:284
+msgid ""
+"Oh, ich habe einen anderen neuen Stein, als den von mir gesetzten, erkannt."
+msgstr "Oh, I recognized a new stone other than the one I set."
+
+#: iGoBot.py:285 iGoBot.py:301
+msgid "Ich versuche, meine Kamera neu einzustellen."
+msgstr "I'm trying to reset my camera."
+
+#: iGoBot.py:286 iGoBot.py:302
+msgid "Einen Augenblick bitte"
+msgstr "Just a moment, please."
+
+#: iGoBot.py:292
+msgid ""
+"Oh, ich konnte wohl keinen Stein greifen. Bitte prfe, dass mein Vorrat  "
+"nicht leer ist"
+msgstr ""
+"Oh, I guess I couldn't grab a rock. Please check that my stock is not empty"
+
+#: iGoBot.py:293
+msgid "Ich versuche es noch einmal"
+msgstr "I'm gonna try it again."
+
+#: iGoBot.py:300
+msgid "Oh, ich erkenne {count} neue weie Steine."
+msgstr "Oh, I recognize {count} new white stones."
+
+#: iGoBot.py:312
+msgid ""
+"Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drcke dann die "
+"Taste."
+msgstr ""
+"Please place your black handicap stones on the board. Then press the key."
+
+#: iGoBot.py:321
+msgid "Du hast keine Vorgabe Steine gelegt."
+msgstr "You didn't lay any handicap  stones."
+
+#: iGoBot.py:324
+msgid "Du hast {count} Vorgabe Steine gelegt."
+msgstr "You have placed {count} handicap stones."
+
+#: iGoBot.py:338
+msgid "Ich bin am Zug. Bitte einen Augenblick Geduld."
+msgstr "My move. Please be patient for a moment."
+
+#: iGoBot.py:346
+msgid "Du bist am Zug."
+msgstr "Your move."
+
+#: iGoBot.py:348
+msgid "Bitte lege einen schwarzen Stein und drcke dann die Taste."
+msgstr "Please place a black stone and press the button."
+
+#: iGoBot.py:353
+msgid "Ich sehe keinen neuen schwarzen Stein"
+msgstr "I see no new black stone"
+
+#: iGoBot.py:363
+msgid "Ein interessanter Zug."
+msgstr "That's an interesting move."
+
+#: iGoBot.py:365
+msgid "Wow, darauf wre ich nicht gekommen."
+msgstr "Wow, I wouldn't have thought of that."
+
+#: iGoBot.py:367
+msgid "Ok, das ist also Dein Zug."
+msgstr "Okay, so this is your move."
+
+#: iGoBot.py:371
+msgid "Ich sehe {count} statt einem neuen schwarzen Stein"
+msgstr "I see {count} instead of a new black stone"
+
+#: iGoBot.py:428
+msgid "Hallo"
+msgstr "hello"
+
+#: iGoBot.py:429
+msgid "Mchtest Du eine Partie go mit mir spielen?"
+msgstr "Would you like to play a game of go with me?"
+
+#: iGoBot.py:430
+msgid "Ich habe eine Spielstrke von etwa 5 kyu."
+msgstr "I have a playing strength of about 5 kyu."

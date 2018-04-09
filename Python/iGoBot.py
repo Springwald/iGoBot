@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/python
+#-*-coding:utf-8-*-
+#vim: set enc=utf8:
 
 #     iGoBot - a GO game playing robot
 #      _ _____      ______       _   
@@ -51,21 +53,26 @@ from DanielsRasPiPythonLibs.speech.SpeechOutput import SpeechOutput
 
 from DanielsRasPiPythonLibs.hardware.PCF8574 import PCF8574
 from DanielsRasPiPythonLibs.hardware.I2cIoExpanderPcf8574Synchron import I2cIoExpanderPcf8574Synchron
-#from DanielsRasPiPythonLibs.hardware.StepperMotorControlSynchron import StepperMotorControlSynchron
 from DanielsRasPiPythonLibs.hardware.RgbLeds import RgbLeds
-#from hardware.GripperAndDispenser import GripperAndDispenser
 from hardware.Light import Light
 from hardware.Motors import Motors
 from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 
-import gettext
-en = gettext.translation('iGoBot', localedir='locale', languages=['en'])
-#print(_('Hello! What is your name?'))  # prints Spanish
-
-
 import atexit
+import gettext
+
+englishSpeech = True
+
+if (englishSpeech == True):
+	en = gettext.translation('iGoBot', localedir='locale', languages=['en'])
+	en.install
+	_ = en.gettext
+else:
+	_ = lambda s: s
 
 class iGoBot:
+
+	englishSpeech 					= True;
 
 	I2cIoExpanderPcf8574Adress		= 0x3e
 
@@ -409,7 +416,7 @@ class iGoBot:
 	def __del__(self):
 		self.Release()
 		
-_ = lambda s: s
+
 		
 def exit_handler():
 	bot.Release()
@@ -417,6 +424,11 @@ def exit_handler():
 if __name__ == "__main__":
 	
 	bot = iGoBot(boardSize=9)
+	
+	if (False):
+		bot.Speak(_("Hallo"))
+		bot.Speak(_("Möchtest Du eine Partie go mit mir spielen?"));
+		bot.Speak(_("Ich habe eine Spielstärke von etwa 5 kyu."))
 	
 	atexit.register(exit_handler)
 	
@@ -429,10 +441,7 @@ if __name__ == "__main__":
 	
 	#bot.StoreAllWhiteStones();
 	
-	if (False):
-		bot.Speak(_("Hallo"))
-		bot.Speak(_("Möchtest Du eine Partie go mit mir spielen?"));
-		bot.Speak(_("Ich habe eine Spielstärke von etwa 5 kyu."))
+	
 		#for i in range(1,1000):
 		#	bot._leds.NeutralAndBlink();
 		#	time.sleep(0.1);

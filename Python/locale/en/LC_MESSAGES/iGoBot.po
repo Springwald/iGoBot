@@ -6,14 +6,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-04-09 19:23+0200\n"
-"PO-Revision-Date: 2018-04-09 19:30+0200\n"
+"PO-Revision-Date: 2018-04-09 20:06+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 2.0.6\n"
-"Last-Translator: \n"
+"Last-Translator: Daniel Springwald <daniel@springwald.de>\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Language: en\n"
 
@@ -48,7 +48,7 @@ msgstr "Just a moment, please."
 
 #: iGoBot.py:292
 msgid ""
-"Oh, ich konnte wohl keinen Stein greifen. Bitte prfe, dass mein Vorrat  "
+"Oh, ich konnte wohl keinen Stein greifen. Bitte prüfe, dass mein Vorrat  "
 "nicht leer ist"
 msgstr ""
 "Oh, I guess I couldn't grab a rock. Please check that my stock is not empty"
@@ -58,12 +58,12 @@ msgid "Ich versuche es noch einmal"
 msgstr "I'm gonna try it again."
 
 #: iGoBot.py:300
-msgid "Oh, ich erkenne {count} neue weie Steine."
+msgid "Oh, ich erkenne {count} neue weiße Steine."
 msgstr "Oh, I recognize {count} new white stones."
 
 #: iGoBot.py:312
 msgid ""
-"Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drcke dann die "
+"Bitte lege Deine schwarzen Vorgabe Steine auf das Brett. Drücke dann die "
 "Taste."
 msgstr ""
 "Please place your black handicap stones on the board. Then press the key."
@@ -85,7 +85,7 @@ msgid "Du bist am Zug."
 msgstr "Your move."
 
 #: iGoBot.py:348
-msgid "Bitte lege einen schwarzen Stein und drcke dann die Taste."
+msgid "Bitte lege einen schwarzen Stein und drücke dann die Taste."
 msgstr "Please place a black stone and press the button."
 
 #: iGoBot.py:353
@@ -97,7 +97,7 @@ msgid "Ein interessanter Zug."
 msgstr "That's an interesting move."
 
 #: iGoBot.py:365
-msgid "Wow, darauf wre ich nicht gekommen."
+msgid "Wow, darauf wäre ich nicht gekommen."
 msgstr "Wow, I wouldn't have thought of that."
 
 #: iGoBot.py:367
@@ -117,5 +117,5 @@ msgid "Mchtest Du eine Partie go mit mir spielen?"
 msgstr "Would you like to play a game of go with me?"
 
 #: iGoBot.py:430
-msgid "Ich habe eine Spielstrke von etwa 5 kyu."
+msgid "Ich habe eine Spielstärke von etwa 5 kyu."
 msgstr "I have a playing strength of about 5 kyu."

@@ -61,7 +61,7 @@ from hardware.iGoBotRgbLeds import iGoBotRgbLeds
 import atexit
 import gettext
 
-englishSpeech = True
+englishSpeech = False
 
 if (englishSpeech == True):
 	en = gettext.translation('iGoBot', localedir='locale', languages=['en'])
@@ -114,15 +114,18 @@ class iGoBot:
 		else:
 			self._speech = SpeechOutput(soundcard=self._soundcard, voice="-vmb-de2");
 			
-		self._speech.Speak("this is a test!");
 		
-		self._camera = CameraStoneDetection();
+		
 		self._board = Board(boardSize);
 		
 		self._switches = I2cIoExpanderPcf8574Synchron(self.I2cIoExpanderPcf8574Adress, useAsInputs=True)
 		
 		self._motors = Motors(self._switches);
 		
+		self._motors.MoveOutOfCameraSight();
+		
+		self._camera = CameraStoneDetection();
+
 		self._gnuGo = GnuGoRemote(boardSize=boardSize)
 		
 		# move to stone storage drop
@@ -436,47 +439,15 @@ if __name__ == "__main__":
 		bot.Speak(_("Ich habe eine Spielstärke von etwa 5 kyu."))
 	
 	atexit.register(exit_handler)
-	
-	#bot.StoreAllWhiteStones();
-	
-	#bot.MoveToXY(500,500);
-	#time.sleep(10000);
-	
+
 	bot.PlayWhiteGame();
 	
 	#bot.StoreAllWhiteStones();
 	
-	
-		#for i in range(1,1000):
-		#	bot._leds.NeutralAndBlink();
-		#	time.sleep(0.1);
-
 	if (False):	
 		for i in range(0,9):
 			bot._motors.GrabStoneFromStorage();
 			bot._motors.PutStoneToFieldPos(i,i);
-	
-	#ended = False;
-	
-	#while ended == True:
-		
-		#time.sleep(1)
-		
-		#bot.UpdateMotors();
-		
-		#events = pygame.event.get()
-	
-		#for event in events:
-			#if event.type == pygame.MOUSEBUTTONUP:
-				#ended = True 
-			#if event.type == pygame.KEYDOWN:
-				#if event.key == pygame.K_ESCAPE:
-					#ended = True 
-				#if event.key == pygame.K_TAB:
-					##roobert.Greet()
-					##start_new_thread(roobert.Greet,())
-					#a=0
-					
 
 
         

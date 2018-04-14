@@ -204,7 +204,7 @@ if __name__ == "__main__":
 
 	atexit.register(exit_handler)
 	
-	#time.sleep(2)
+	time.sleep(1)
 	
 	for i in range(0,0):
 		print(i)
@@ -221,9 +221,9 @@ if __name__ == "__main__":
 	tester.closeGripper();
 	while(tester.allTargetsReached == False):
 		tester.Update();
-	time.sleep(1)
+	time.sleep(4)
 	
 	tester.openGripper();
 	while(tester.allTargetsReached == False):
 		tester.Update();
-	time.sleep(1)
+	time.sleep(4)

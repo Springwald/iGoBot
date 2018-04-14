@@ -54,7 +54,7 @@ class iGoBotRgbLeds():
 	_released			= False
 	
 	def __init__(self):
-		self._leds = RgbLeds(ledCount=29, ledBrightness=100);
+		self._leds = RgbLeds(ledCount=29, ledBrightness=10);
 		self._face = McRoboFace(self._leds);
 
 	def AnimateButtonGreen(self):

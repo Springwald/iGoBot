@@ -84,7 +84,7 @@ class Motors:
 	_yPosStoneStorageDrop			= 3800
 	
 	# where to move to grab a new stone from dispenser
-	_xPosStoneStorageGrab			= 4170 
+	_xPosStoneStorageGrab			= 4160 
 	_yPosStoneStorageGrab			= 3485
 	
 	_yPosOutOfCameraSight			= 3800
@@ -199,12 +199,14 @@ class Motors:
 		self.OpenGripper();
 		self.MoveToZ(self._zPosOnBoard);
 		self.CloseGripper();
+		#time.sleep(3);
 		self.MoveToZ(self._zPosUp);
 		return;
 		
 	def PutStoneToBoard(self):
 		self.MoveToZ(self._zPosDropOnBoard);
 		self.OpenGripper();
+		#time.sleep(3);
 		self.MoveToZ(self._zPosUp);
 		return;
 		
